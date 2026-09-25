@@ -1,0 +1,132 @@
+# Full stack: docker compose up --build
+# Infra only (run the services from your IDE): docker compose up -d user-db catalog-db order-db rabbitmq mailpit
+
+x-db: &db
+  image: postgres:16-alpine
+  environment: &db-env
+    POSTGRES_USER: ${POSTGRES_USER:-booking}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-booking}
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+    interval: 5s
+    timeout: 3s
+    retries: 10
+
+x-db-client: &db-client
+  DB_USER: ${POSTGRES_USER:-booking}
+  DB_PASSWORD: ${POSTGRES_PASSWORD:-booking}
+
+services:
+  # ---------- infrastructure ----------
+  # One database per service: no service can reach into another's tables.
+  user-db:
+    <<: *db
+    environment: { <<: *db-env, POSTGRES_DB: users }
+    ports: ["5433:5432"]
+    volumes: [user-db:/var/lib/postgresql/data]
+
+  catalog-db:
+    <<: *db
+    environment: { <<: *db-env, POSTGRES_DB: catalog }
+    ports: ["5434:5432"]
+    volumes: [catalog-db:/var/lib/postgresql/data]
+
+  order-db:
+    <<: *db
+    environment: { <<: *db-env, POSTGRES_DB: orders }
+    ports: ["5435:5432"]
+    volumes: [order-db:/var/lib/postgresql/data]
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672" # management UI
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Catches every email the notification service sends. Open http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+  # ---------- services ----------
+  gateway:
+    build: ./gateway
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-please-32-bytes-min}
+      USER_SERVICE_URL: http://user-service:8081
+      CATALOG_SERVICE_URL: http://catalog-service:8082
+      ORDER_SERVICE_URL: http://order-service:8083
+      NOTIFICATION_SERVICE_URL: http://notification-service:4000
+      REALTIME_SERVICE_URL: http://realtime-service:4001
+    ports: ["8080:8080"]
+    depends_on: [user-service, catalog-service, order-service, notification-service, realtime-service]
+
+  user-service:
+    build: ./user-service
+    environment:
+      <<: *db-client
+      DB_URL: jdbc:postgresql://user-db:5432/users
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-please-32-bytes-min}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    depends_on:
+      user-db: { condition: service_healthy }
+
+  catalog-service:
+    build: ./catalog-service
+    environment:
+      <<: *db-client
+      DB_URL: jdbc:postgresql://catalog-db:5432/catalog
+    depends_on:
+      catalog-db: { condition: service_healthy }
+
+  order-service:
+    build: ./order-service
+    environment:
+      <<: *db-client
+      DB_URL: jdbc:postgresql://order-db:5432/orders
+      CATALOG_SERVICE_URL: http://catalog-service:8082
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+    depends_on:
+      order-db: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      catalog-service: { condition: service_started }
+
+  notification-service:
+    build: ./notification-service
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+
+  realtime-service:
+    build: ./realtime-service
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-please-32-bytes-min}
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+
+  frontend:
+    build: ./frontend
+    ports: ["3000:80"]
+    depends_on: [gateway]
+
+volumes:
+  user-db:
+  catalog-db:
+  order-db:
