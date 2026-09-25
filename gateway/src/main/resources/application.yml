@@ -1,0 +1,54 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}
+                allowed-methods: [GET, POST, PUT, DELETE, OPTIONS]
+                allowed-headers: ['*']
+                allow-credentials: true
+          routes:
+            - id: user-service
+              uri: ${USER_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/auth/**,/api/users/**
+            - id: catalog-service
+              uri: ${CATALOG_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/products/**
+            - id: order-service
+              uri: ${ORDER_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/orders/**
+            - id: notification-service
+              uri: ${NOTIFICATION_SERVICE_URL:http://localhost:4000}
+              predicates:
+                - Path=/api/notifications/**
+            # Socket.IO does its own JWT check during the handshake; the gateway just proxies
+            # both the HTTP long-polling and the WebSocket upgrade.
+            - id: realtime-service
+              uri: ${REALTIME_SERVICE_URL:http://localhost:4001}
+              predicates:
+                - Path=/socket.io/**
+
+security:
+  jwt-secret: ${JWT_SECRET:dev-only-secret-change-me-please-32-bytes-min}
+  public-paths:
+    - /api/auth/**
+    - GET /api/products/**
+    - /socket.io/**
+    - /actuator/health
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
