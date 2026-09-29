@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Nav from './components/Nav.jsx';
-import { useAuth } from './lib/auth.jsx';
+import { useAuth } from './lib/auth.tsx';
 import Cart from './pages/Cart.jsx';
 import Login from './pages/Login.jsx';
 import Orders from './pages/Orders.jsx';

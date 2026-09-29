@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, money } from '../lib/api.ts';
-import { useAuth } from '../lib/auth.jsx';
+import { useAuth } from '../lib/auth.tsx';
 import { useCart } from '../lib/cart.jsx';
 
 export default function Cart() {
