@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, money } from '../lib/api.js';
+import { api, money } from '../lib/api.ts';
 import { useCart } from '../lib/cart.jsx';
 
 const CATEGORIES = ['All', 'Stays', 'Experiences', 'Events'];

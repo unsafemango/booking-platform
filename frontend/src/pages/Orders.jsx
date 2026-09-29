@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import StatusBadge from '../components/StatusBadge.jsx';
-import { api, money } from '../lib/api.js';
+import { api, money } from '../lib/api.ts';
 import { useOrderUpdates } from '../lib/useOrderUpdates.js';
 
 export default function Orders() {

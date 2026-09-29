@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
-import { tokenStore } from './api.js';
+import { tokenStore } from './api.ts';
 
 /**
  * Opens a Socket.IO connection (through the gateway) and calls `onUpdate` for every

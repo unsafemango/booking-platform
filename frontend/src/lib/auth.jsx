@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { api, tokenStore } from './api.js';
+import { api, tokenStore } from './api.ts';
 
 const USER_KEY = 'booking.user';
 const AuthContext = createContext(null);
