@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth.tsx';
-import { useCart } from '../lib/cart.jsx';
+import { useCart } from '../lib/cart.tsx';
 
 export default function Nav() {
   const { user, logout } = useAuth();

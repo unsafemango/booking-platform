@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, money } from '../lib/api.ts';
-import { useCart } from '../lib/cart.jsx';
+import { useCart } from '../lib/cart.tsx';
 
 const CATEGORIES = ['All', 'Stays', 'Experiences', 'Events'];
 

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, money } from '../lib/api.ts';
 import { useAuth } from '../lib/auth.tsx';
-import { useCart } from '../lib/cart.jsx';
+import { useCart } from '../lib/cart.tsx';
 
 export default function Cart() {
   const { lines, total, setQuantity, clear } = useCart();
