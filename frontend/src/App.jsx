@@ -4,7 +4,7 @@ import { useAuth } from './lib/auth.tsx';
 import Cart from './pages/Cart.jsx';
 import Login from './pages/Login.jsx';
 import Orders from './pages/Orders.jsx';
-import Products from './pages/Products.jsx';
+import Products from './pages/Products.tsx';
 import Register from './pages/Register.jsx';
 
 function RequireAuth({ children }) {

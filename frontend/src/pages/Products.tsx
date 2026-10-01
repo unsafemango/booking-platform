@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { api, money } from '../lib/api.ts';
 import { useCart } from '../lib/cart.tsx';
+import type { Product } from '../types.ts';
 
-const CATEGORIES = ['All', 'Stays', 'Experiences', 'Events'];
+const CATEGORIES = ['All', 'Stays', 'Experiences', 'Events'] as const;
+type Category = (typeof CATEGORIES)[number];
 
 export default function Products() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('All');
-  const [error, setError] = useState(null);
+  const [category, setCategory] = useState<Category>('All');
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const cart = useCart();
 
@@ -17,15 +19,15 @@ export default function Products() {
     if (query) params.set('q', query);
     if (category !== 'All') params.set('category', category);
     const timer = setTimeout(() => {
-      api(`/api/products?${params}`)
+      api<Product[]>(`/api/products?${params}`)
         .then((data) => { setProducts(data); setError(null); })
-        .catch((e) => setError(e.message))
+        .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
         .finally(() => setLoading(false));
     }, 200);
     return () => clearTimeout(timer);
   }, [query, category]);
 
-  const inCart = (id) => cart.lines.find((l) => l.product.id === id)?.quantity ?? 0;
+  const inCart = (id: string): number => cart.lines.find((l) => l.product.id === id)?.quantity ?? 0;
 
   return (
     <>
