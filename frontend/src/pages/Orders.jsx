@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import StatusBadge from '../components/StatusBadge.jsx';
+import StatusBadge from '../components/StatusBadge.tsx';
 import { api, money } from '../lib/api.ts';
 import { useOrderUpdates } from '../lib/useOrderUpdates.ts';
 
