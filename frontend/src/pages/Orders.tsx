@@ -3,25 +3,28 @@ import { Link } from 'react-router-dom';
 import StatusBadge from '../components/StatusBadge.tsx';
 import { api, money } from '../lib/api.ts';
 import { useOrderUpdates } from '../lib/useOrderUpdates.ts';
+import type { Notification, Order } from '../types.ts';
 
 export default function Orders() {
-  const [orders, setOrders] = useState(null);
-  const [notifications, setNotifications] = useState([]);
-  const [flash, setFlash] = useState(null);
-  const [error, setError] = useState(null);
+  const [orders, setOrders] = useState<Order[] | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [flash, setFlash] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const loadNotifications = useCallback(() => {
-    api('/api/notifications').then(setNotifications).catch(() => {});
+    api<Notification[]>('/api/notifications').then(setNotifications).catch(() => {});
   }, []);
 
   useEffect(() => {
-    api('/api/orders').then(setOrders).catch((e) => setError(e.message));
+    api<Order[]>('/api/orders')
+      .then(setOrders)
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
     loadNotifications();
   }, [loadNotifications]);
 
   const live = useOrderUpdates((event) => {
     setOrders((current) =>
-      current?.map((o) => (o.id === event.orderId ? { ...o, status: event.status, updatedAt: event.occurredAt } : o)),
+      current?.map((o) => (o.id === event.orderId ? { ...o, status: event.status, updatedAt: event.occurredAt } : o)) ?? null,
     );
     setFlash(event.orderId);
     setTimeout(() => setFlash((id) => (id === event.orderId ? null : id)), 1500);
@@ -29,12 +32,12 @@ export default function Orders() {
     setTimeout(loadNotifications, 500);
   });
 
-  async function cancel(id) {
+  async function cancel(id: string) {
     try {
-      const updated = await api(`/api/orders/${id}/cancel`, { method: 'POST' });
-      setOrders((current) => current.map((o) => (o.id === id ? updated : o)));
-    } catch (e) {
-      setError(e.message);
+      const updated = await api<Order>(`/api/orders/${id}/cancel`, { method: 'POST' });
+      setOrders((current) => current?.map((o) => (o.id === id ? updated : o)) ?? null);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     }
   }
 

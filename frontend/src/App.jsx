@@ -3,7 +3,7 @@ import Nav from './components/Nav.tsx';
 import { useAuth } from './lib/auth.tsx';
 import Cart from './pages/Cart.tsx';
 import Login from './pages/Login.jsx';
-import Orders from './pages/Orders.jsx';
+import Orders from './pages/Orders.tsx';
 import Products from './pages/Products.tsx';
 import Register from './pages/Register.jsx';
 
