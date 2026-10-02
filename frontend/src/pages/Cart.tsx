@@ -3,27 +3,31 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api, money } from '../lib/api.ts';
 import { useAuth } from '../lib/auth.tsx';
 import { useCart } from '../lib/cart.tsx';
+import type { Order, PlaceOrderRequest } from '../types.ts';
 
 export default function Cart() {
   const { lines, total, setQuantity, clear } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function checkout() {
-    if (!user) return navigate('/login?next=/cart');
+    if (!user) {
+      navigate('/login?next=/cart');
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
-      await api('/api/orders', {
-        method: 'POST',
-        body: { items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity })) },
-      });
+      const body: PlaceOrderRequest = {
+        items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity })),
+      };
+      await api<Order>('/api/orders', { method: 'POST', body });
       clear();
       navigate('/orders');
-    } catch (e) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSubmitting(false);
     }
