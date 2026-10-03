@@ -2,10 +2,10 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Nav from './components/Nav.tsx';
 import { useAuth } from './lib/auth.tsx';
 import Cart from './pages/Cart.tsx';
-import Login from './pages/Login.jsx';
+import Login from './pages/Login.tsx';
 import Orders from './pages/Orders.tsx';
 import Products from './pages/Products.tsx';
-import Register from './pages/Register.jsx';
+import Register from './pages/Register.tsx';
 
 function RequireAuth({ children }) {
   const { user } = useAuth();

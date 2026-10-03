@@ -1,19 +1,27 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ApiError } from '../lib/api.ts';
 import { useAuth } from '../lib/auth.tsx';
+
+interface RegisterForm {
+  name: string;
+  email: string;
+  password: string;
+}
 
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
-  const [error, setError] = useState(null);
-  const [fields, setFields] = useState({});
+  const [form, setForm] = useState<RegisterForm>({ name: '', email: '', password: '' });
+  const [error, setError] = useState<string | null>(null);
+  const [fields, setFields] = useState<Partial<Record<keyof RegisterForm, string>>>({});
   const [busy, setBusy] = useState(false);
 
-  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+  const set = (key: keyof RegisterForm) => (e: ChangeEvent<HTMLInputElement>) =>
+    setForm({ ...form, [key]: e.target.value });
 
-  async function submit(e) {
+  async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
     setError(null);
@@ -21,9 +29,9 @@ export default function Register() {
     try {
       await register(form.name, form.email, form.password);
       navigate(params.get('next') ?? '/');
-    } catch (err) {
-      setError(err.message);
-      setFields(err.fields ?? {});
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
+      setFields(err instanceof ApiError ? (err.fields ?? {}) : {});
     } finally {
       setBusy(false);
     }
