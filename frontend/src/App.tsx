@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Nav from './components/Nav.tsx';
 import { useAuth } from './lib/auth.tsx';
@@ -7,7 +8,7 @@ import Orders from './pages/Orders.tsx';
 import Products from './pages/Products.tsx';
 import Register from './pages/Register.tsx';
 
-function RequireAuth({ children }) {
+function RequireAuth({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const location = useLocation();
   if (!user) return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} replace />;
