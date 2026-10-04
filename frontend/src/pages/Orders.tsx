@@ -12,7 +12,9 @@ export default function Orders() {
   const [error, setError] = useState<string | null>(null);
 
   const loadNotifications = useCallback(() => {
-    api<Notification[]>('/api/notifications').then(setNotifications).catch(() => {});
+    api<Notification[]>('/api/notifications')
+      .then(setNotifications)
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -23,8 +25,11 @@ export default function Orders() {
   }, [loadNotifications]);
 
   const live = useOrderUpdates((event) => {
-    setOrders((current) =>
-      current?.map((o) => (o.id === event.orderId ? { ...o, status: event.status, updatedAt: event.occurredAt } : o)) ?? null,
+    setOrders(
+      (current) =>
+        current?.map((o) =>
+          o.id === event.orderId ? { ...o, status: event.status, updatedAt: event.occurredAt } : o,
+        ) ?? null,
     );
     setFlash(event.orderId);
     setTimeout(() => setFlash((id) => (id === event.orderId ? null : id)), 1500);
@@ -50,7 +55,9 @@ export default function Orders() {
         </div>
         {error && <p className="alert">{error}</p>}
         {orders?.length === 0 && (
-          <p className="muted">No bookings yet. <Link to="/">Find something to book.</Link></p>
+          <p className="muted">
+            No bookings yet. <Link to="/">Find something to book.</Link>
+          </p>
         )}
         <div className="stack">
           {orders?.map((o) => (
@@ -65,7 +72,9 @@ export default function Orders() {
               <ul className="order-items">
                 {o.items.map((i) => (
                   <li key={i.productId}>
-                    <span>{i.quantity} × {i.productName}</span>
+                    <span>
+                      {i.quantity} × {i.productName}
+                    </span>
                     <span>{money(i.unitPrice * i.quantity)}</span>
                   </li>
                 ))}
@@ -73,7 +82,9 @@ export default function Orders() {
               <div className="order-foot">
                 <strong>{money(o.total)}</strong>
                 {(o.status === 'PLACED' || o.status === 'CONFIRMED') && (
-                  <button className="btn btn-ghost danger" onClick={() => cancel(o.id)}>Cancel</button>
+                  <button className="btn btn-ghost danger" onClick={() => cancel(o.id)}>
+                    Cancel
+                  </button>
                 )}
               </div>
             </article>

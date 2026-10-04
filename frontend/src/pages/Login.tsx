@@ -28,11 +28,37 @@ export default function Login() {
   return (
     <form className="card auth" onSubmit={submit}>
       <h1>Log in</h1>
-      <label>Email<input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus /></label>
-      <label>Password<input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
+      <label>
+        Email
+        <input
+          className="input"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoFocus
+        />
+      </label>
+      <label>
+        Password
+        <input
+          className="input"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      </label>
       {error && <p className="alert">{error}</p>}
-      <button className="btn" disabled={busy}>{busy ? 'Logging in…' : 'Log in'}</button>
-      <p className="muted">No account? <Link to={`/register${params.get('next') ? `?next=${params.get('next')}` : ''}`}>Sign up</Link></p>
+      <button className="btn" disabled={busy}>
+        {busy ? 'Logging in…' : 'Log in'}
+      </button>
+      <p className="muted">
+        No account?{' '}
+        <Link to={`/register${params.get('next') ? `?next=${params.get('next')}` : ''}`}>
+          Sign up
+        </Link>
+      </p>
     </form>
   );
 }

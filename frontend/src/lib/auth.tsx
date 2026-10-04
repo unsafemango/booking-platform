@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { api, tokenStore } from './api.ts';
 import type { AuthResponse, User } from '../types.ts';
 
@@ -47,9 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       login: (email, password) =>
-        api<AuthResponse>('/api/auth/login', { method: 'POST', body: { email, password } }).then(accept),
+        api<AuthResponse>('/api/auth/login', { method: 'POST', body: { email, password } }).then(
+          accept,
+        ),
       register: (name, email, password) =>
-        api<AuthResponse>('/api/auth/register', { method: 'POST', body: { name, email, password } }).then(accept),
+        api<AuthResponse>('/api/auth/register', {
+          method: 'POST',
+          body: { name, email, password },
+        }).then(accept),
       logout,
     }),
     [user, accept, logout],

@@ -37,7 +37,9 @@ export default function Cart() {
     return (
       <section className="empty">
         <h1>Your cart is empty</h1>
-        <Link to="/" className="btn">Browse bookings</Link>
+        <Link to="/" className="btn">
+          Browse bookings
+        </Link>
       </section>
     );
   }
@@ -53,14 +55,22 @@ export default function Cart() {
               <div className="muted">{money(product.price)} each</div>
             </div>
             <div className="qty">
-              <button className="btn btn-ghost" aria-label="Remove one" onClick={() => setQuantity(product.id, quantity - 1)}>−</button>
+              <button
+                className="btn btn-ghost"
+                aria-label="Remove one"
+                onClick={() => setQuantity(product.id, quantity - 1)}
+              >
+                −
+              </button>
               <span>{quantity}</span>
               <button
                 className="btn btn-ghost"
                 aria-label="Add one"
                 disabled={quantity >= product.stock}
                 onClick={() => setQuantity(product.id, quantity + 1)}
-              >+</button>
+              >
+                +
+              </button>
             </div>
             <strong className="line-total">{money(product.price * quantity)}</strong>
           </div>
@@ -72,7 +82,9 @@ export default function Cart() {
       </div>
       {error && <p className="alert">{error}</p>}
       <div className="actions">
-        <button className="btn btn-ghost" onClick={clear}>Clear</button>
+        <button className="btn btn-ghost" onClick={clear}>
+          Clear
+        </button>
         <button className="btn" onClick={checkout} disabled={submitting}>
           {submitting ? 'Booking…' : user ? 'Book now' : 'Log in to book'}
         </button>

@@ -37,7 +37,11 @@ export async function api<T>(path: string, { method = 'GET', body }: ApiOptions 
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
 
-  const res = await fetch(path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  const res = await fetch(path, {
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
   const data: unknown = res.status === 204 ? null : await res.json().catch(() => null);
 
   if (!res.ok) {

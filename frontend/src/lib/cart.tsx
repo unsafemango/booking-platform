@@ -57,7 +57,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       add: (product) =>
         setLines((current) =>
           current.some((l) => l.product.id === product.id)
-            ? current.map((l) => (l.product.id === product.id ? { ...l, quantity: l.quantity + 1 } : l))
+            ? current.map((l) =>
+                l.product.id === product.id ? { ...l, quantity: l.quantity + 1 } : l,
+              )
             : [...current, { product, quantity: 1 }],
         ),
       setQuantity,

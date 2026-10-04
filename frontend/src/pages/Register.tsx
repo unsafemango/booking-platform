@@ -40,15 +40,35 @@ export default function Register() {
   return (
     <form className="card auth" onSubmit={submit}>
       <h1>Create an account</h1>
-      <label>Name<input className="input" value={form.name} onChange={set('name')} required autoFocus /></label>
+      <label>
+        Name
+        <input className="input" value={form.name} onChange={set('name')} required autoFocus />
+      </label>
       {fields.name && <span className="field-error">{fields.name}</span>}
-      <label>Email<input className="input" type="email" value={form.email} onChange={set('email')} required /></label>
+      <label>
+        Email
+        <input className="input" type="email" value={form.email} onChange={set('email')} required />
+      </label>
       {fields.email && <span className="field-error">{fields.email}</span>}
-      <label>Password<input className="input" type="password" value={form.password} onChange={set('password')} minLength={8} required /></label>
+      <label>
+        Password
+        <input
+          className="input"
+          type="password"
+          value={form.password}
+          onChange={set('password')}
+          minLength={8}
+          required
+        />
+      </label>
       {fields.password && <span className="field-error">{fields.password}</span>}
       {error && !Object.keys(fields).length && <p className="alert">{error}</p>}
-      <button className="btn" disabled={busy}>{busy ? 'Creating…' : 'Sign up'}</button>
-      <p className="muted">Already registered? <Link to="/login">Log in</Link></p>
+      <button className="btn" disabled={busy}>
+        {busy ? 'Creating…' : 'Sign up'}
+      </button>
+      <p className="muted">
+        Already registered? <Link to="/login">Log in</Link>
+      </p>
     </form>
   );
 }

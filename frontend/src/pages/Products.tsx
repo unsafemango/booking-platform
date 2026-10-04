@@ -20,7 +20,10 @@ export default function Products() {
     if (category !== 'All') params.set('category', category);
     const timer = setTimeout(() => {
       api<Product[]>(`/api/products?${params}`)
-        .then((data) => { setProducts(data); setError(null); })
+        .then((data) => {
+          setProducts(data);
+          setError(null);
+        })
         .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
         .finally(() => setLoading(false));
     }, 200);
@@ -43,7 +46,11 @@ export default function Products() {
           />
           <div className="chips">
             {CATEGORIES.map((c) => (
-              <button key={c} className={`chip ${c === category ? 'active' : ''}`} onClick={() => setCategory(c)}>
+              <button
+                key={c}
+                className={`chip ${c === category ? 'active' : ''}`}
+                onClick={() => setCategory(c)}
+              >
                 {c}
               </button>
             ))}
@@ -52,7 +59,9 @@ export default function Products() {
       </section>
 
       {error && <p className="alert">Couldn't load the catalog: {error}</p>}
-      {!loading && !error && products.length === 0 && <p className="muted">Nothing matches that search.</p>}
+      {!loading && !error && products.length === 0 && (
+        <p className="muted">Nothing matches that search.</p>
+      )}
 
       <div className="grid">
         {products.map((p) => {

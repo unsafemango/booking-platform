@@ -11,7 +11,8 @@ import Register from './pages/Register.tsx';
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const location = useLocation();
-  if (!user) return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} replace />;
+  if (!user)
+    return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} replace />;
   return children;
 }
 
@@ -23,7 +24,14 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Products />} />
           <Route path="/cart" element={<Cart />} />
-          <Route path="/orders" element={<RequireAuth><Orders /></RequireAuth>} />
+          <Route
+            path="/orders"
+            element={
+              <RequireAuth>
+                <Orders />
+              </RequireAuth>
+            }
+          />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="*" element={<Navigate to="/" replace />} />
