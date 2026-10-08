@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Alert from '../components/Alert.tsx';
+import Button from '../components/Button.tsx';
 import { api, money } from '../lib/api.ts';
 import { useAuth } from '../lib/auth.tsx';
 import { useCart } from '../lib/cart.tsx';
@@ -55,22 +57,22 @@ export default function Cart() {
               <div className="muted">{money(product.price)} each</div>
             </div>
             <div className="qty">
-              <button
-                className="btn btn-ghost"
+              <Button
+                variant="ghost"
                 aria-label="Remove one"
                 onClick={() => setQuantity(product.id, quantity - 1)}
               >
                 −
-              </button>
+              </Button>
               <span>{quantity}</span>
-              <button
-                className="btn btn-ghost"
+              <Button
+                variant="ghost"
                 aria-label="Add one"
                 disabled={quantity >= product.stock}
                 onClick={() => setQuantity(product.id, quantity + 1)}
               >
                 +
-              </button>
+              </Button>
             </div>
             <strong className="line-total">{money(product.price * quantity)}</strong>
           </div>
@@ -80,14 +82,14 @@ export default function Cart() {
           <strong>{money(total)}</strong>
         </div>
       </div>
-      {error && <p className="alert">{error}</p>}
+      {error && <Alert>{error}</Alert>}
       <div className="actions">
-        <button className="btn btn-ghost" onClick={clear}>
+        <Button variant="ghost" onClick={clear}>
           Clear
-        </button>
-        <button className="btn" onClick={checkout} disabled={submitting}>
+        </Button>
+        <Button onClick={checkout} disabled={submitting}>
           {submitting ? 'Booking…' : user ? 'Book now' : 'Log in to book'}
-        </button>
+        </Button>
       </div>
     </section>
   );

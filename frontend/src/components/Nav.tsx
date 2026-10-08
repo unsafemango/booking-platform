@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import Button from './Button.tsx';
 import { useAuth } from '../lib/auth.tsx';
 import { useCart } from '../lib/cart.tsx';
 
@@ -24,15 +25,15 @@ export default function Nav() {
           {user ? (
             <>
               <span className="muted hide-sm">{user.name}</span>
-              <button
-                className="btn btn-ghost"
+              <Button
+                variant="ghost"
                 onClick={() => {
                   logout();
                   navigate('/');
                 }}
               >
                 Log out
-              </button>
+              </Button>
             </>
           ) : (
             <NavLink to="/login" className="btn btn-ghost">

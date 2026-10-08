@@ -1,5 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import Alert from '../components/Alert.tsx';
+import Button from '../components/Button.tsx';
+import Input from '../components/Input.tsx';
 import { useAuth } from '../lib/auth.tsx';
 
 export default function Login() {
@@ -28,31 +31,25 @@ export default function Login() {
   return (
     <form className="card auth" onSubmit={submit}>
       <h1>Log in</h1>
-      <label>
-        Email
-        <input
-          className="input"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          autoFocus
-        />
-      </label>
-      <label>
-        Password
-        <input
-          className="input"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </label>
-      {error && <p className="alert">{error}</p>}
-      <button className="btn" disabled={busy}>
+      <Input
+        label="Email"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+        autoFocus
+      />
+      <Input
+        label="Password"
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      />
+      {error && <Alert>{error}</Alert>}
+      <Button type="submit" disabled={busy}>
         {busy ? 'Logging in…' : 'Log in'}
-      </button>
+      </Button>
       <p className="muted">
         No account?{' '}
         <Link to={`/register${params.get('next') ? `?next=${params.get('next')}` : ''}`}>

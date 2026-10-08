@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import Alert from '../components/Alert.tsx';
+import Button from '../components/Button.tsx';
+import Input from '../components/Input.tsx';
 import { api, money } from '../lib/api.ts';
 import { useCart } from '../lib/cart.tsx';
 import type { Product } from '../types.ts';
@@ -37,8 +40,7 @@ export default function Products() {
       <section className="page-head">
         <h1>Find something to book</h1>
         <div className="filters">
-          <input
-            className="input"
+          <Input
             type="search"
             placeholder="Search stays, tours, events…"
             value={query}
@@ -58,7 +60,7 @@ export default function Products() {
         </div>
       </section>
 
-      {error && <p className="alert">Couldn't load the catalog: {error}</p>}
+      {error && <Alert>Couldn't load the catalog: {error}</Alert>}
       {!loading && !error && products.length === 0 && (
         <p className="muted">Nothing matches that search.</p>
       )}
@@ -80,9 +82,9 @@ export default function Products() {
                       {p.stock === 0 ? 'Sold out' : `${p.stock} available`}
                     </div>
                   </div>
-                  <button className="btn" disabled={remaining <= 0} onClick={() => cart.add(p)}>
+                  <Button disabled={remaining <= 0} onClick={() => cart.add(p)}>
                     {inCart(p.id) ? `Add another (${inCart(p.id)})` : 'Add to cart'}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </article>

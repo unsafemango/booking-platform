@@ -1,5 +1,8 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import Alert from '../components/Alert.tsx';
+import Button from '../components/Button.tsx';
+import Input from '../components/Input.tsx';
 import { ApiError } from '../lib/api.ts';
 import { useAuth } from '../lib/auth.tsx';
 
@@ -40,32 +43,35 @@ export default function Register() {
   return (
     <form className="card auth" onSubmit={submit}>
       <h1>Create an account</h1>
-      <label>
-        Name
-        <input className="input" value={form.name} onChange={set('name')} required autoFocus />
-      </label>
-      {fields.name && <span className="field-error">{fields.name}</span>}
-      <label>
-        Email
-        <input className="input" type="email" value={form.email} onChange={set('email')} required />
-      </label>
-      {fields.email && <span className="field-error">{fields.email}</span>}
-      <label>
-        Password
-        <input
-          className="input"
-          type="password"
-          value={form.password}
-          onChange={set('password')}
-          minLength={8}
-          required
-        />
-      </label>
-      {fields.password && <span className="field-error">{fields.password}</span>}
-      {error && !Object.keys(fields).length && <p className="alert">{error}</p>}
-      <button className="btn" disabled={busy}>
+      <Input
+        label="Name"
+        value={form.name}
+        onChange={set('name')}
+        error={fields.name}
+        required
+        autoFocus
+      />
+      <Input
+        label="Email"
+        type="email"
+        value={form.email}
+        onChange={set('email')}
+        error={fields.email}
+        required
+      />
+      <Input
+        label="Password"
+        type="password"
+        value={form.password}
+        onChange={set('password')}
+        error={fields.password}
+        minLength={8}
+        required
+      />
+      {error && !Object.keys(fields).length && <Alert>{error}</Alert>}
+      <Button type="submit" disabled={busy}>
         {busy ? 'Creating…' : 'Sign up'}
-      </button>
+      </Button>
       <p className="muted">
         Already registered? <Link to="/login">Log in</Link>
       </p>
