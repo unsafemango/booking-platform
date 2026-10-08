@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
+import { OrderListSkeleton } from '../components/Skeleton.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
 import { api, money } from '../lib/api.ts';
 import { useOrderUpdates } from '../lib/useOrderUpdates.ts';
@@ -56,6 +57,7 @@ export default function Orders() {
           <span className={`live ${live ? 'on' : ''}`}>{live ? 'Live' : 'Connecting…'}</span>
         </div>
         {error && <Alert>{error}</Alert>}
+        {orders === null && !error && <OrderListSkeleton />}
         {orders?.length === 0 && (
           <p className="muted">
             No bookings yet. <Link to="/">Find something to book.</Link>

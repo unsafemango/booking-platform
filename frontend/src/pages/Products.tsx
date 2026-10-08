@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import Input from '../components/Input.tsx';
+import { ProductGridSkeleton } from '../components/Skeleton.tsx';
 import { api, money } from '../lib/api.ts';
 import { useCart } from '../lib/cart.tsx';
 import type { Product } from '../types.ts';
@@ -61,6 +62,7 @@ export default function Products() {
       </section>
 
       {error && <Alert>Couldn't load the catalog: {error}</Alert>}
+      {loading && !error && <ProductGridSkeleton />}
       {!loading && !error && products.length === 0 && (
         <p className="muted">Nothing matches that search.</p>
       )}

@@ -86,6 +86,15 @@ describe('Orders live updates', () => {
     vi.useRealTimers();
   });
 
+  it('shows a loading skeleton until the orders arrive', async () => {
+    mockApi([loftOrder], () => []);
+    renderOrders();
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading bookings…');
+    await screen.findByText('Harbour Loft', { exact: false });
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
   it('connects with the stored token and shows the connection state', async () => {
     mockApi([loftOrder], () => []);
     renderOrders();

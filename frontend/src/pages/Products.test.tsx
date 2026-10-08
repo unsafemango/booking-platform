@@ -68,6 +68,15 @@ describe('Products page', () => {
     expect(within(kayakCard).getByRole('button', { name: 'Add to cart' })).toBeDisabled();
   });
 
+  it('shows a loading skeleton until the catalog arrives', async () => {
+    mockCatalog(() => [loft]);
+    renderProducts();
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading products…');
+    expect(await screen.findByRole('heading', { name: 'Harbour Loft' })).toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
   it('shows an empty message when nothing matches', async () => {
     mockCatalog(() => []);
     renderProducts();

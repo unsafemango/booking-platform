@@ -249,6 +249,43 @@ main.container {
   padding: 60px 0;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Loading skeletons */
+.skeleton {
+  display: block;
+  border-radius: 6px;
+  background: var(--border);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+.skeleton-image {
+  aspect-ratio: 16 / 9;
+  border-radius: 0;
+}
+.card .skeleton-lines,
+.card.skeleton-lines {
+  display: grid;
+  gap: 10px;
+}
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
 /* Product cards */
 .product {
   overflow: hidden;
