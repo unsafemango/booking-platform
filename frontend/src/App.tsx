@@ -5,6 +5,7 @@ import { useAuth } from './lib/auth.tsx';
 import Cart from './pages/Cart.tsx';
 import Login from './pages/Login.tsx';
 import Orders from './pages/Orders.tsx';
+import ProductDetail from './pages/ProductDetail.tsx';
 import Products from './pages/Products.tsx';
 import Register from './pages/Register.tsx';
 
@@ -23,6 +24,7 @@ export default function App() {
       <main className="container">
         <Routes>
           <Route path="/" element={<Products />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
           <Route
             path="/orders"

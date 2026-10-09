@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { CartProvider } from '../lib/cart.tsx';
 import type { Product } from '../types.ts';
@@ -39,9 +40,11 @@ function lastUrl(fetchMock: ReturnType<typeof mockCatalog>): URL {
 
 function renderProducts() {
   return render(
-    <CartProvider>
-      <Products />
-    </CartProvider>,
+    <MemoryRouter>
+      <CartProvider>
+        <Products />
+      </CartProvider>
+    </MemoryRouter>,
   );
 }
 
@@ -61,6 +64,11 @@ describe('Products page', () => {
     const loftCard = card('Harbour Loft');
     expect(within(loftCard).getByText('$240.00')).toBeInTheDocument();
     expect(within(loftCard).getByText('2 available')).toBeInTheDocument();
+
+    expect(within(loftCard).getByRole('link', { name: 'Harbour Loft' })).toHaveAttribute(
+      'href',
+      '/products/p1',
+    );
 
     const kayakCard = card('Kayak Tour');
     expect(within(kayakCard).getByText('$55.50')).toBeInTheDocument();

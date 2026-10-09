@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import Input from '../components/Input.tsx';
@@ -75,7 +76,9 @@ export default function Products() {
               {p.imageUrl && <img src={p.imageUrl} alt="" loading="lazy" />}
               <div className="product-body">
                 <span className="eyebrow">{p.category}</span>
-                <h3>{p.name}</h3>
+                <h3>
+                  <Link to={`/products/${p.id}`}>{p.name}</Link>
+                </h3>
                 <p className="muted">{p.description}</p>
                 <div className="product-foot">
                   <div>

@@ -380,6 +380,24 @@ main.container {
 .stock.low {
   color: var(--warn);
 }
+.product h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+.product h3 a:hover {
+  text-decoration: underline;
+}
+.back-link {
+  display: inline-block;
+  margin-bottom: 16px;
+  text-decoration: none;
+}
+.product-detail {
+  max-width: 720px;
+}
+.product-detail h1 {
+  margin: 4px 0 8px;
+}
 
 /* Cart */
 .line {
