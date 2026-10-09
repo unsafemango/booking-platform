@@ -54,3 +54,6 @@ export async function api<T>(path: string, { method = 'GET', body }: ApiOptions 
 
 export const money = (value: number | string): string =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value));
+
+/** The short booking reference shown to customers, e.g. "#AAAAAAAA". */
+export const orderRef = (id: string): string => `#${id.slice(0, 8).toUpperCase()}`;

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx';
 import { AuthProvider } from './lib/auth.tsx';
 import { CartProvider } from './lib/cart.tsx';
+import { ToastProvider } from './lib/toast.tsx';
 import './styles.css';
 
 const root = document.getElementById('root');
@@ -12,11 +13,13 @@ if (!root) throw new Error('Missing #root element in index.html');
 createRoot(root).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <CartProvider>
-          <App />
-        </CartProvider>
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <CartProvider>
+            <App />
+          </CartProvider>
+        </AuthProvider>
+      </ToastProvider>
     </BrowserRouter>
   </StrictMode>,
 );

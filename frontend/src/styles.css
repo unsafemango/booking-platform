@@ -207,6 +207,59 @@ main.container {
   margin-top: -8px;
 }
 
+/* Toasts */
+.toasts {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 20;
+  display: grid;
+  gap: 8px;
+  width: min(360px, calc(100vw - 32px));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.12);
+  animation: toast-in 0.2s ease-out;
+}
+.toast-success {
+  border-left-color: var(--ok);
+}
+.toast-danger {
+  border-left-color: var(--danger);
+}
+.toast button {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+
 /* Layout pieces */
 .card {
   background: var(--surface);

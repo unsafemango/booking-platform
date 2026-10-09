@@ -22,7 +22,7 @@ export default tseslint.config(
   },
   {
     // Context modules export their provider together with its hook on purpose.
-    files: ['src/lib/auth.tsx', 'src/lib/cart.tsx'],
+    files: ['src/lib/auth.tsx', 'src/lib/cart.tsx', 'src/lib/toast.tsx'],
     rules: {
       'react-refresh/only-export-components': 'off',
     },

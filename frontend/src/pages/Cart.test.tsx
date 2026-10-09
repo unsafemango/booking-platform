@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { tokenStore } from '../lib/api.ts';
 import { AuthProvider } from '../lib/auth.tsx';
 import { CartProvider, type CartLine } from '../lib/cart.tsx';
+import { ToastProvider } from '../lib/toast.tsx';
 import type { Order, Product, User } from '../types.ts';
 import Cart from './Cart.tsx';
 
@@ -66,16 +67,18 @@ function Location() {
 
 function renderCart() {
   return render(
-    <AuthProvider>
-      <CartProvider>
-        <MemoryRouter initialEntries={['/cart']}>
-          <Routes>
-            <Route path="/cart" element={<Cart />} />
-            <Route path="*" element={<Location />} />
-          </Routes>
-        </MemoryRouter>
-      </CartProvider>
-    </AuthProvider>,
+    <ToastProvider>
+      <AuthProvider>
+        <CartProvider>
+          <MemoryRouter initialEntries={['/cart']}>
+            <Routes>
+              <Route path="/cart" element={<Cart />} />
+              <Route path="*" element={<Location />} />
+            </Routes>
+          </MemoryRouter>
+        </CartProvider>
+      </AuthProvider>
+    </ToastProvider>,
   );
 }
 
@@ -126,6 +129,7 @@ describe('Cart checkout', () => {
       ],
     });
     expect(JSON.parse(localStorage.getItem(CART_KEY) ?? 'null')).toEqual([]);
+    expect(screen.getByText('Booking #O1 placed')).toBeInTheDocument();
   });
 
   it('keeps the cart and shows the message when stock is short (409)', async () => {
@@ -139,6 +143,7 @@ describe('Cart checkout', () => {
     expect(await screen.findByText('Not enough stock for Harbour Loft')).toHaveClass('alert');
     expect(screen.getByRole('button', { name: 'Book now' })).toBeEnabled();
     expect(screen.queryByTestId('location')).not.toBeInTheDocument();
+    expect(screen.queryByText(/placed$/)).not.toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem(CART_KEY) ?? 'null')).toEqual([
       { product: loft, quantity: 2 },
     ]);

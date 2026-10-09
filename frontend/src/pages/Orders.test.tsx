@@ -1,7 +1,8 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tokenStore } from '../lib/api.ts';
+import { ToastProvider } from '../lib/toast.tsx';
 import type { Notification, Order, OrderUpdateEvent } from '../types.ts';
 import Orders from './Orders.tsx';
 
@@ -70,9 +71,11 @@ function pushUpdate(event: OrderUpdateEvent) {
 
 function renderOrders() {
   return render(
-    <MemoryRouter>
-      <Orders />
-    </MemoryRouter>,
+    <ToastProvider>
+      <MemoryRouter>
+        <Orders />
+      </MemoryRouter>
+    </ToastProvider>,
   );
 }
 
@@ -136,6 +139,55 @@ describe('Orders live updates', () => {
 
     act(() => vi.advanceTimersByTime(1500));
     expect(orderCard(loftOrder.id)).not.toHaveClass('flash');
+  });
+
+  it('announces a live status change once', async () => {
+    mockApi([loftOrder], () => []);
+    renderOrders();
+    await screen.findByText('Harbour Loft', { exact: false });
+    const confirmed: OrderUpdateEvent = {
+      type: 'order.status-changed',
+      orderId: loftOrder.id,
+      status: 'CONFIRMED',
+      previousStatus: 'PLACED',
+      total: 480,
+      occurredAt: '2026-10-07T12:05:00Z',
+    };
+
+    pushUpdate(confirmed);
+    pushUpdate(confirmed);
+
+    const toasts = screen.getByRole('list', { name: 'Notifications' });
+    expect(within(toasts).getAllByRole('listitem')).toHaveLength(1);
+    expect(within(toasts).getByText('Booking #AAAAAAAA is now confirmed')).toBeInTheDocument();
+  });
+
+  it('confirms a cancellation without a second toast from the live event', async () => {
+    const fetchMock = mockApi([kayakOrder], () => []);
+    renderOrders();
+    await screen.findByText('Kayak Tour', { exact: false });
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ ...kayakOrder, status: 'CANCELLED' }), { status: 200 }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(await screen.findByText('Booking #BBBBBBBB cancelled')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      `/api/orders/${kayakOrder.id}/cancel`,
+      expect.objectContaining({ method: 'POST' }),
+    );
+
+    pushUpdate({
+      type: 'order.status-changed',
+      orderId: kayakOrder.id,
+      status: 'CANCELLED',
+      previousStatus: 'CONFIRMED',
+      total: 55.5,
+      occurredAt: '2026-10-07T13:00:00Z',
+    });
+
+    const toasts = screen.getByRole('list', { name: 'Notifications' });
+    expect(within(toasts).getAllByRole('listitem')).toHaveLength(1);
   });
 
   it('hides the cancel button once an order is cancelled elsewhere', async () => {

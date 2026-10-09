@@ -4,7 +4,8 @@ import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import { OrderListSkeleton } from '../components/Skeleton.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
-import { api, money } from '../lib/api.ts';
+import { api, money, orderRef } from '../lib/api.ts';
+import { useToast } from '../lib/toast.tsx';
 import { useOrderUpdates } from '../lib/useOrderUpdates.ts';
 import type { Notification, Order } from '../types.ts';
 
@@ -13,6 +14,7 @@ export default function Orders() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [flash, setFlash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { show } = useToast();
 
   const loadNotifications = useCallback(() => {
     api<Notification[]>('/api/notifications')
@@ -28,6 +30,13 @@ export default function Orders() {
   }, [loadNotifications]);
 
   const live = useOrderUpdates((event) => {
+    const known = orders?.find((o) => o.id === event.orderId);
+    if (known && known.status !== event.status) {
+      show(`Booking ${orderRef(event.orderId)} is now ${event.status.toLowerCase()}`, {
+        tone: event.status === 'CANCELLED' ? 'danger' : 'info',
+        id: `order-${event.orderId}-${event.status}`,
+      });
+    }
     setOrders(
       (current) =>
         current?.map((o) =>
@@ -44,6 +53,7 @@ export default function Orders() {
     try {
       const updated = await api<Order>(`/api/orders/${id}/cancel`, { method: 'POST' });
       setOrders((current) => current?.map((o) => (o.id === id ? updated : o)) ?? null);
+      show(`Booking ${orderRef(id)} cancelled`, { id: `order-${id}-${updated.status}` });
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -68,7 +78,7 @@ export default function Orders() {
             <article key={o.id} className={`card order ${flash === o.id ? 'flash' : ''}`}>
               <div className="order-head">
                 <div>
-                  <span className="mono">#{o.id.slice(0, 8).toUpperCase()}</span>
+                  <span className="mono">{orderRef(o.id)}</span>
                   <span className="muted"> · {new Date(o.createdAt).toLocaleString()}</span>
                 </div>
                 <StatusBadge status={o.status} />

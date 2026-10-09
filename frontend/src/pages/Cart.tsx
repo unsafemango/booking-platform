@@ -2,14 +2,16 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
-import { api, money } from '../lib/api.ts';
+import { api, money, orderRef } from '../lib/api.ts';
 import { useAuth } from '../lib/auth.tsx';
 import { useCart } from '../lib/cart.tsx';
+import { useToast } from '../lib/toast.tsx';
 import type { Order, PlaceOrderRequest } from '../types.ts';
 
 export default function Cart() {
   const { lines, total, setQuantity, clear } = useCart();
   const { user } = useAuth();
+  const { show } = useToast();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,8 +27,12 @@ export default function Cart() {
       const body: PlaceOrderRequest = {
         items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity })),
       };
-      await api<Order>('/api/orders', { method: 'POST', body });
+      const order = await api<Order>('/api/orders', { method: 'POST', body });
       clear();
+      show(`Booking ${orderRef(order.id)} placed`, {
+        tone: 'success',
+        id: `order-${order.id}-${order.status}`,
+      });
       navigate('/orders');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
