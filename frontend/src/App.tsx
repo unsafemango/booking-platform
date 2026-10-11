@@ -4,6 +4,7 @@ import Nav from './components/Nav.tsx';
 import { useAuth } from './lib/auth.tsx';
 import Cart from './pages/Cart.tsx';
 import Login from './pages/Login.tsx';
+import OrderDetail from './pages/OrderDetail.tsx';
 import Orders from './pages/Orders.tsx';
 import ProductDetail from './pages/ProductDetail.tsx';
 import Products from './pages/Products.tsx';
@@ -31,6 +32,14 @@ export default function App() {
             element={
               <RequireAuth>
                 <Orders />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/orders/:id"
+            element={
+              <RequireAuth>
+                <OrderDetail />
               </RequireAuth>
             }
           />

@@ -459,6 +459,25 @@ main.container {
   justify-content: space-between;
   gap: 10px;
 }
+.order-detail {
+  max-width: 720px;
+}
+.order-detail h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+.order-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+  margin: 12px 0 0;
+}
+.order-meta dt {
+  color: var(--muted);
+}
+.order-meta dd {
+  margin: 0;
+}
 .badge {
   font-size: 0.78rem;
   font-weight: 600;

@@ -78,7 +78,9 @@ export default function Orders() {
             <article key={o.id} className={`card order ${flash === o.id ? 'flash' : ''}`}>
               <div className="order-head">
                 <div>
-                  <span className="mono">{orderRef(o.id)}</span>
+                  <Link to={`/orders/${o.id}`} className="mono">
+                    {orderRef(o.id)}
+                  </Link>
                   <span className="muted"> · {new Date(o.createdAt).toLocaleString()}</span>
                 </div>
                 <StatusBadge status={o.status} />
