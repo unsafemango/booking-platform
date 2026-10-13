@@ -109,14 +109,48 @@ describe('Order detail page', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel booking' }));
+    fireEvent.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Yes, cancel booking' }),
+    );
 
     expect(await screen.findByText('Booking #AAAAAAAA cancelled')).toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenLastCalledWith(
       `/api/orders/${loftOrder.id}/cancel`,
       expect.objectContaining({ method: 'POST' }),
     );
     expect(screen.getByText('cancelled')).toHaveClass('badge-cancelled');
     expect(screen.queryByRole('button', { name: 'Cancel booking' })).not.toBeInTheDocument();
+  });
+
+  it('asks for confirmation and keeps the booking when declined', async () => {
+    const fetchMock = mockFetch(200, loftOrder);
+    renderDetail();
+    await screen.findByRole('heading', { name: 'Booking #AAAAAAAA' });
+    const trigger = screen.getByRole('button', { name: 'Cancel booking' });
+    trigger.focus();
+
+    fireEvent.click(trigger);
+    const dialog = screen.getByRole('alertdialog', { name: 'Cancel this booking?' });
+    expect(dialog).toHaveAccessibleDescription(/#AAAAAAAA \(\$480\.00\) will be cancelled/);
+    expect(within(dialog).getByRole('button', { name: 'Keep booking' })).toHaveFocus();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Keep booking' }));
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the confirmation if the order is cancelled elsewhere', async () => {
+    mockFetch(200, loftOrder);
+    renderDetail();
+    await screen.findByRole('heading', { name: 'Booking #AAAAAAAA' });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel booking' }));
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+
+    act(() => socket.emit('order:update', statusUpdate({ status: 'CANCELLED' })));
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
 
   it('shows the error when cancelling fails', async () => {
@@ -128,8 +162,10 @@ describe('Order detail page', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel booking' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, cancel booking' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Order can no longer be cancelled');
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cancel booking' })).toBeEnabled();
   });
 

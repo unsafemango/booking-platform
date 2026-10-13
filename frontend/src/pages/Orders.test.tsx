@@ -171,6 +171,7 @@ describe('Orders live updates', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, cancel booking' }));
     expect(await screen.findByText('Booking #BBBBBBBB cancelled')).toBeInTheDocument();
     expect(fetchMock).toHaveBeenLastCalledWith(
       `/api/orders/${kayakOrder.id}/cancel`,
@@ -188,6 +189,22 @@ describe('Orders live updates', () => {
 
     const toasts = screen.getByRole('list', { name: 'Notifications' });
     expect(within(toasts).getAllByRole('listitem')).toHaveLength(1);
+  });
+
+  it('does not cancel until the dialog is confirmed', async () => {
+    const fetchMock = mockApi([kayakOrder], () => []);
+    renderOrders();
+    await screen.findByText('Kayak Tour', { exact: false });
+    const calls = fetchMock.mock.calls.length;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    const dialog = screen.getByRole('alertdialog', { name: 'Cancel this booking?' });
+    expect(dialog).toHaveTextContent('#BBBBBBBB');
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(fetchMock.mock.calls.length).toBe(calls);
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
   });
 
   it('hides the cancel button once an order is cancelled elsewhere', async () => {

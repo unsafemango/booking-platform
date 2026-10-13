@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
+import ConfirmDialog from '../components/ConfirmDialog.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
 import { ApiError, api, money, orderRef } from '../lib/api.ts';
 import { useToast } from '../lib/toast.tsx';
@@ -14,6 +15,7 @@ export default function OrderDetail() {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const { show } = useToast();
 
@@ -65,6 +67,7 @@ export default function OrderDetail() {
       setActionError(e instanceof Error ? e.message : String(e));
     } finally {
       setCancelling(false);
+      setConfirming(false);
     }
   }
 
@@ -137,13 +140,28 @@ export default function OrderDetail() {
         <div className="order-foot">
           <strong>Total {money(order.total)}</strong>
           {cancellable && (
-            <Button variant="danger" disabled={cancelling} onClick={cancel}>
-              {cancelling ? 'Cancelling…' : 'Cancel booking'}
+            <Button variant="danger" onClick={() => setConfirming(true)}>
+              Cancel booking
             </Button>
           )}
         </div>
         <p className="muted small">{live ? 'Live updates on' : 'Connecting for live updates…'}</p>
       </article>
+
+      <ConfirmDialog
+        open={confirming && cancellable}
+        title="Cancel this booking?"
+        confirmLabel={cancelling ? 'Cancelling…' : 'Yes, cancel booking'}
+        cancelLabel="Keep booking"
+        busy={cancelling}
+        onConfirm={cancel}
+        onCancel={() => setConfirming(false)}
+      >
+        <p>
+          Booking <span className="mono">{orderRef(order.id)}</span> ({money(order.total)}) will be
+          cancelled. This can't be undone.
+        </p>
+      </ConfirmDialog>
     </>
   );
 }

@@ -575,3 +575,42 @@ main.container {
     display: none;
   }
 }
+
+/* Confirm dialog */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(16, 24, 40, 0.45);
+}
+.dialog {
+  width: min(420px, 100%);
+  padding: 20px;
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.2);
+  animation: dialog-in 0.15s ease-out;
+}
+.dialog h2 {
+  margin: 0 0 0.5rem;
+}
+.dialog-body p {
+  margin: 0 0 1rem;
+}
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dialog {
+    animation: none;
+  }
+}

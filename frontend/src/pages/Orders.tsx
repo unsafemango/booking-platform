@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
+import ConfirmDialog from '../components/ConfirmDialog.tsx';
 import { OrderListSkeleton } from '../components/Skeleton.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
 import { api, money, orderRef } from '../lib/api.ts';
@@ -9,11 +10,17 @@ import { useToast } from '../lib/toast.tsx';
 import { useOrderUpdates } from '../lib/useOrderUpdates.ts';
 import type { Notification, Order } from '../types.ts';
 
+function isCancellable(order: Order) {
+  return order.status === 'PLACED' || order.status === 'CONFIRMED';
+}
+
 export default function Orders() {
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [flash, setFlash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
   const { show } = useToast();
 
   const loadNotifications = useCallback(() => {
@@ -49,13 +56,20 @@ export default function Orders() {
     setTimeout(loadNotifications, 500);
   });
 
+  // Looked up from the live list so the dialog closes if the order is cancelled elsewhere.
+  const confirming = orders?.find((o) => o.id === confirmingId && isCancellable(o)) ?? null;
+
   async function cancel(id: string) {
+    setCancelling(true);
     try {
       const updated = await api<Order>(`/api/orders/${id}/cancel`, { method: 'POST' });
       setOrders((current) => current?.map((o) => (o.id === id ? updated : o)) ?? null);
       show(`Booking ${orderRef(id)} cancelled`, { id: `order-${id}-${updated.status}` });
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setCancelling(false);
+      setConfirmingId(null);
     }
   }
 
@@ -97,8 +111,8 @@ export default function Orders() {
               </ul>
               <div className="order-foot">
                 <strong>{money(o.total)}</strong>
-                {(o.status === 'PLACED' || o.status === 'CONFIRMED') && (
-                  <Button variant="danger" onClick={() => cancel(o.id)}>
+                {isCancellable(o) && (
+                  <Button variant="danger" onClick={() => setConfirmingId(o.id)}>
                     Cancel
                   </Button>
                 )}
@@ -120,6 +134,23 @@ export default function Orders() {
           ))}
         </ul>
       </aside>
+
+      <ConfirmDialog
+        open={confirming !== null}
+        title="Cancel this booking?"
+        confirmLabel={cancelling ? 'Cancelling…' : 'Yes, cancel booking'}
+        cancelLabel="Keep booking"
+        busy={cancelling}
+        onConfirm={() => confirming && cancel(confirming.id)}
+        onCancel={() => setConfirmingId(null)}
+      >
+        {confirming && (
+          <p>
+            Booking <span className="mono">{orderRef(confirming.id)}</span> (
+            {money(confirming.total)}) will be cancelled. This can't be undone.
+          </p>
+        )}
+      </ConfirmDialog>
     </div>
   );
 }
