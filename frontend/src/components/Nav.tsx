@@ -20,6 +20,7 @@ export default function Nav() {
           </NavLink>
           <NavLink to="/cart">Cart{count > 0 && <span className="pill">{count}</span>}</NavLink>
           {user && <NavLink to="/orders">My bookings</NavLink>}
+          {user && <NavLink to="/profile">Profile</NavLink>}
         </nav>
         <div className="nav-user">
           {user ? (

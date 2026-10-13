@@ -8,6 +8,7 @@ import OrderDetail from './pages/OrderDetail.tsx';
 import Orders from './pages/Orders.tsx';
 import ProductDetail from './pages/ProductDetail.tsx';
 import Products from './pages/Products.tsx';
+import Profile from './pages/Profile.tsx';
 import Register from './pages/Register.tsx';
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -40,6 +41,14 @@ export default function App() {
             element={
               <RequireAuth>
                 <OrderDetail />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <RequireAuth>
+                <Profile />
               </RequireAuth>
             }
           />

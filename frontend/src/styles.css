@@ -466,17 +466,27 @@ main.container {
   margin: 0;
   font-size: 1.4rem;
 }
-.order-meta {
+.order-meta,
+.profile-meta {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 4px 16px;
   margin: 12px 0 0;
 }
-.order-meta dt {
+.order-meta dt,
+.profile-meta dt {
   color: var(--muted);
 }
-.order-meta dd {
+.order-meta dd,
+.profile-meta dd {
   margin: 0;
+}
+.profile {
+  max-width: 520px;
+}
+.profile h1 {
+  margin: 0;
+  font-size: 1.4rem;
 }
 .badge {
   font-size: 0.78rem;
