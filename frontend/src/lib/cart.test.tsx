@@ -85,6 +85,24 @@ describe('cart context', () => {
     expect(result.current.lines).toEqual([]);
   });
 
+  it('refreshes product details of matching lines and keeps quantities', () => {
+    const { result } = renderCart();
+    act(() => {
+      result.current.add(product('a', 1));
+      result.current.add(product('a', 1));
+      result.current.add(product('b', 2));
+    });
+
+    const updated = { ...product('a', 1.5), stock: 1 };
+    act(() => result.current.refresh([updated, product('z', 9)]));
+
+    expect(result.current.lines).toEqual([
+      { product: updated, quantity: 2 },
+      { product: product('b', 2), quantity: 1 },
+    ]);
+    expect(result.current.total).toBe(5);
+  });
+
   it('clears all lines', () => {
     const { result } = renderCart();
 

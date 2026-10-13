@@ -148,4 +148,54 @@ describe('Cart checkout', () => {
       { product: loft, quantity: 2 },
     ]);
   });
+
+  it('refreshes stock after a 409 and points out the short item', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const json = (status: number, body: unknown) =>
+        new Response(JSON.stringify(body), { status });
+      if (input === '/api/orders') return json(409, { error: 'Not enough stock for Harbour Loft' });
+      if (input === '/api/products/p1') return json(200, { ...loft, stock: 1 });
+      if (input === '/api/products/p2') return json(200, kayak);
+      return json(404, { error: 'Not found' });
+    });
+    signIn();
+    fillCart([
+      { product: loft, quantity: 2 },
+      { product: kayak, quantity: 1 },
+    ]);
+    renderCart();
+
+    expect(screen.queryByText(/left$/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Book now' }));
+
+    expect(await screen.findByText('Only 1 left')).toHaveClass('stock', 'low');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Not enough stock for Harbour Loft. Adjust the items marked below.',
+    );
+    expect(screen.getAllByText(/left$|Sold out/)).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(JSON.parse(localStorage.getItem(CART_KEY) ?? 'null')).toEqual([
+      { product: { ...loft, stock: 1 }, quantity: 2 },
+      { product: kayak, quantity: 1 },
+    ]);
+    expect(screen.getAllByRole('button', { name: 'Add one' })[0]).toBeDisabled();
+  });
+
+  it('marks a sold-out item', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
+      input === '/api/orders'
+        ? new Response(JSON.stringify({ error: 'Not enough stock' }), { status: 409 })
+        : new Response(JSON.stringify({ ...loft, stock: 0 }), { status: 200 }),
+    );
+    signIn();
+    fillCart([{ product: loft, quantity: 1 }]);
+    renderCart();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Book now' }));
+
+    expect(await screen.findByText('Sold out')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Not enough stock. Adjust the items marked below.',
+    );
+  });
 });

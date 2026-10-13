@@ -2,14 +2,26 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
-import { api, money, orderRef } from '../lib/api.ts';
+import { api, ApiError, money, orderRef } from '../lib/api.ts';
 import { useAuth } from '../lib/auth.tsx';
-import { useCart } from '../lib/cart.tsx';
+import { useCart, type CartLine } from '../lib/cart.tsx';
 import { useToast } from '../lib/toast.tsx';
-import type { Order, PlaceOrderRequest } from '../types.ts';
+import type { Order, PlaceOrderRequest, Product } from '../types.ts';
+
+/** Reloads every product in the cart; products that fail to load are left out. */
+async function fetchLatest(lines: CartLine[]): Promise<Product[]> {
+  const results = await Promise.allSettled(
+    lines.map((l) => api<Product>(`/api/products/${l.product.id}`)),
+  );
+  return results.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []));
+}
+
+function shortLabel(stock: number): string {
+  return stock <= 0 ? 'Sold out' : `Only ${stock} left`;
+}
 
 export default function Cart() {
-  const { lines, total, setQuantity, clear } = useCart();
+  const { lines, total, setQuantity, refresh, clear } = useCart();
   const { user } = useAuth();
   const { show } = useToast();
   const navigate = useNavigate();
@@ -36,6 +48,16 @@ export default function Cart() {
       navigate('/orders');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
+      if (e instanceof ApiError && e.status === 409) {
+        // Someone else booked first: show current availability next to each line.
+        const latest = await fetchLatest(lines);
+        refresh(latest);
+        const short = latest.some((p) => {
+          const line = lines.find((l) => l.product.id === p.id);
+          return line !== undefined && line.quantity > p.stock;
+        });
+        if (short) setError(`${e.message.replace(/\.?$/, '.')} Adjust the items marked below.`);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -61,6 +83,9 @@ export default function Cart() {
             <div>
               <strong>{product.name}</strong>
               <div className="muted">{money(product.price)} each</div>
+              {quantity > product.stock && (
+                <div className="stock low">{shortLabel(product.stock)}</div>
+              )}
             </div>
             <div className="qty">
               <Button
