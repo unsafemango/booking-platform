@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import Alert from './components/Alert.tsx';
 import Nav from './components/Nav.tsx';
 import { useAuth } from './lib/auth.tsx';
+import Admin from './pages/Admin.tsx';
 import Cart from './pages/Cart.tsx';
 import Login from './pages/Login.tsx';
 import OrderDetail from './pages/OrderDetail.tsx';
@@ -16,6 +18,13 @@ function RequireAuth({ children }: { children: ReactNode }) {
   const location = useLocation();
   if (!user)
     return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} replace />;
+  return children;
+}
+
+function RequireAdmin({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  if (user?.role !== 'ADMIN')
+    return <Alert>You need an administrator account to view this page.</Alert>;
   return children;
 }
 
@@ -49,6 +58,16 @@ export default function App() {
             element={
               <RequireAuth>
                 <Profile />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <RequireAuth>
+                <RequireAdmin>
+                  <Admin />
+                </RequireAdmin>
               </RequireAuth>
             }
           />

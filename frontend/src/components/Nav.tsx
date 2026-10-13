@@ -21,6 +21,7 @@ export default function Nav() {
           <NavLink to="/cart">Cart{count > 0 && <span className="pill">{count}</span>}</NavLink>
           {user && <NavLink to="/orders">My bookings</NavLink>}
           {user && <NavLink to="/profile">Profile</NavLink>}
+          {user?.role === 'ADMIN' && <NavLink to="/admin">Admin</NavLink>}
         </nav>
         <div className="nav-user">
           {user ? (
