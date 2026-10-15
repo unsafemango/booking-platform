@@ -22,9 +22,14 @@ export default function Admin() {
 
   return (
     <>
-      <section className="page-head">
-        <h1>Admin</h1>
-        <p className="muted">Manage the product catalog.</p>
+      <section className="page-head row">
+        <div>
+          <h1>Admin</h1>
+          <p className="muted">Manage the product catalog.</p>
+        </div>
+        <Link to="/admin/products/new" className="btn">
+          New product
+        </Link>
       </section>
       {error && <Alert>{error}</Alert>}
       {products === null && !error && (
