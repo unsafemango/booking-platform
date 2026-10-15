@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import ProductForm from '../components/ProductForm.tsx';
 import { ApiError, api } from '../lib/api.ts';
+import { serverFieldErrors, type ProductFormErrors } from '../lib/productForm.ts';
 import { useToast } from '../lib/toast.tsx';
 import type { Product, ProductInput } from '../types.ts';
 
@@ -15,6 +16,7 @@ export default function AdminEditProduct() {
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<ProductFormErrors>();
 
   useEffect(() => {
     let active = true;
@@ -38,6 +40,7 @@ export default function AdminEditProduct() {
   async function save(input: ProductInput) {
     setBusy(true);
     setError(null);
+    setFieldErrors(undefined);
     try {
       const saved = await api<Product>(`/api/products/${encodeURIComponent(id)}`, {
         method: 'PUT',
@@ -46,7 +49,15 @@ export default function AdminEditProduct() {
       show(`Saved changes to ${saved.name}`, { tone: 'success' });
       navigate('/admin');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
+      const fields = serverFieldErrors(e);
+      setFieldErrors(fields);
+      setError(
+        Object.keys(fields).length
+          ? 'Check the highlighted fields.'
+          : e instanceof Error
+            ? e.message
+            : String(e),
+      );
       setBusy(false);
     }
   }
@@ -99,6 +110,7 @@ export default function AdminEditProduct() {
         initial={product}
         submitLabel={busy ? 'Saving…' : 'Save changes'}
         busy={busy}
+        serverErrors={fieldErrors}
         onSubmit={save}
       />
     </>

@@ -1,4 +1,4 @@
-import { useId, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useId, useState, type ChangeEvent, type FormEvent } from 'react';
 import {
   toFormValues,
   validateProduct,
@@ -14,15 +14,27 @@ interface ProductFormProps {
   initial?: ProductInput;
   submitLabel: string;
   busy?: boolean;
+  /** Field errors the API returned for the last submit. */
+  serverErrors?: ProductFormErrors;
   onSubmit: (input: ProductInput) => void;
 }
 
 // Shared by the admin create and edit pages. Validates on submit, then clears
 // a field's error as soon as the admin edits that field.
-export default function ProductForm({ initial, submitLabel, busy, onSubmit }: ProductFormProps) {
+export default function ProductForm({
+  initial,
+  submitLabel,
+  busy,
+  serverErrors,
+  onSubmit,
+}: ProductFormProps) {
   const [values, setValues] = useState<ProductFormValues>(() => toFormValues(initial));
   const [errors, setErrors] = useState<ProductFormErrors>({});
   const descriptionId = useId();
+
+  useEffect(() => {
+    if (serverErrors) setErrors(serverErrors);
+  }, [serverErrors]);
 
   const set =
     (key: keyof ProductFormValues) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -86,6 +98,7 @@ export default function ProductForm({ initial, submitLabel, busy, onSubmit }: Pr
         type="url"
         value={values.imageUrl}
         onChange={set('imageUrl')}
+        error={errors.imageUrl}
         placeholder="https://…"
       />
       <Button type="submit" disabled={busy}>

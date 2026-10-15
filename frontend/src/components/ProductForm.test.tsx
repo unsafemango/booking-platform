@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { toFormValues, validateProduct } from '../lib/productForm.ts';
+import { ApiError } from '../lib/api.ts';
+import { serverFieldErrors, toFormValues, validateProduct } from '../lib/productForm.ts';
 import ProductForm from './ProductForm.tsx';
 
 const valid = {
@@ -111,5 +112,37 @@ describe('ProductForm', () => {
       stock: '',
       imageUrl: '',
     });
+  });
+});
+
+describe('serverFieldErrors', () => {
+  it('keeps only the product form fields from an API error', () => {
+    const e = new ApiError(400, 'Validation failed', { price: 'must be >= 0', id: 'ignored' });
+    expect(serverFieldErrors(e)).toEqual({ price: 'must be >= 0' });
+  });
+
+  it('returns no errors for other failures', () => {
+    expect(serverFieldErrors(new ApiError(500, 'Server error'))).toEqual({});
+    expect(serverFieldErrors(new Error('offline'))).toEqual({});
+  });
+});
+
+describe('ProductForm server errors', () => {
+  it('marks the fields the API rejected', () => {
+    const { rerender } = render(<ProductForm submitLabel="Save" onSubmit={() => {}} />);
+    rerender(
+      <ProductForm
+        submitLabel="Save"
+        serverErrors={{ imageUrl: 'must be a valid URL' }}
+        onSubmit={() => {}}
+      />,
+    );
+
+    const image = screen.getByLabelText('Image URL');
+    expect(image).toHaveAttribute('aria-invalid', 'true');
+    expect(image).toHaveAccessibleDescription('must be a valid URL');
+
+    fireEvent.change(image, { target: { value: 'https://example.com/a.png' } });
+    expect(image).not.toHaveAttribute('aria-invalid');
   });
 });

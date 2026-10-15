@@ -1,4 +1,5 @@
 import type { ProductInput } from '../types.ts';
+import { ApiError } from './api.ts';
 
 /** Product form state: every field is the raw text the admin typed. */
 export interface ProductFormValues {
@@ -11,6 +12,15 @@ export interface ProductFormValues {
 }
 
 export type ProductFormErrors = Partial<Record<keyof ProductFormValues, string>>;
+
+const FIELDS: (keyof ProductFormValues)[] = [
+  'name',
+  'description',
+  'category',
+  'price',
+  'stock',
+  'imageUrl',
+];
 
 // Mirrors the limits on the catalog service's ProductRequest.
 const NAME_MAX = 200;
@@ -26,6 +36,16 @@ export function toFormValues(product?: ProductInput): ProductFormValues {
     stock: product ? String(product.stock) : '',
     imageUrl: product?.imageUrl ?? '',
   };
+}
+
+/** Picks the product form's fields out of a 400 response's `fields` map. */
+export function serverFieldErrors(e: unknown): ProductFormErrors {
+  const errors: ProductFormErrors = {};
+  if (!(e instanceof ApiError) || !e.fields) return errors;
+  for (const key of FIELDS) {
+    if (e.fields[key]) errors[key] = e.fields[key];
+  }
+  return errors;
 }
 
 /** Checks the form and, when it is valid, returns the request body for the API. */
