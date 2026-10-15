@@ -52,6 +52,9 @@ export default function Admin() {
                 <th scope="col" className="num">
                   Stock
                 </th>
+                <th scope="col">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -64,6 +67,11 @@ export default function Admin() {
                   <td className="num">{money(p.price)}</td>
                   <td className={`num stock ${p.stock < LOW_STOCK ? 'low' : ''}`}>
                     {p.stock === 0 ? 'Sold out' : p.stock}
+                  </td>
+                  <td>
+                    <Link to={`/admin/products/${p.id}/edit`} aria-label={`Edit ${p.name}`}>
+                      Edit
+                    </Link>
                   </td>
                 </tr>
               ))}

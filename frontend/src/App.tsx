@@ -4,6 +4,7 @@ import Alert from './components/Alert.tsx';
 import Nav from './components/Nav.tsx';
 import { useAuth } from './lib/auth.tsx';
 import Admin from './pages/Admin.tsx';
+import AdminEditProduct from './pages/AdminEditProduct.tsx';
 import AdminNewProduct from './pages/AdminNewProduct.tsx';
 import Cart from './pages/Cart.tsx';
 import Login from './pages/Login.tsx';
@@ -78,6 +79,16 @@ export default function App() {
               <RequireAuth>
                 <RequireAdmin>
                   <AdminNewProduct />
+                </RequireAdmin>
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin/products/:id/edit"
+            element={
+              <RequireAuth>
+                <RequireAdmin>
+                  <AdminEditProduct />
                 </RequireAdmin>
               </RequireAuth>
             }
