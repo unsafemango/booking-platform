@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import type { Product } from '../types.ts';
+import { ToastProvider } from '../lib/toast.tsx';
 import Admin from './Admin.tsx';
 
 const loft: Product = {
@@ -40,9 +41,11 @@ function mockFetch(status: number, body: unknown) {
 
 function renderAdmin() {
   return render(
-    <MemoryRouter>
-      <Admin />
-    </MemoryRouter>,
+    <ToastProvider>
+      <MemoryRouter>
+        <Admin />
+      </MemoryRouter>
+    </ToastProvider>,
   );
 }
 

@@ -686,3 +686,10 @@ main.container {
 .table .stock {
   font-size: inherit;
 }
+.table .row-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}

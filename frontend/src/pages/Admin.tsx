@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
+import Button from '../components/Button.tsx';
+import ConfirmDialog from '../components/ConfirmDialog.tsx';
 import { api, money } from '../lib/api.ts';
+import { useToast } from '../lib/toast.tsx';
 import type { Product } from '../types.ts';
 
 const LOW_STOCK = 5;
@@ -13,12 +16,32 @@ function byCategoryThenName(a: Product, b: Product) {
 export default function Admin() {
   const [products, setProducts] = useState<Product[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const { show } = useToast();
 
   useEffect(() => {
     api<Product[]>('/api/products')
       .then((list) => setProducts([...list].sort(byCategoryThenName)))
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
+
+  const confirming = products?.find((p) => p.id === deletingId) ?? null;
+
+  async function remove(product: Product) {
+    setDeleting(true);
+    setError(null);
+    try {
+      await api<null>(`/api/products/${product.id}`, { method: 'DELETE' });
+      setProducts((current) => current?.filter((p) => p.id !== product.id) ?? null);
+      show(`${product.name} deleted`, { id: `product-${product.id}-deleted` });
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDeleting(false);
+      setDeletingId(null);
+    }
+  }
 
   return (
     <>
@@ -69,9 +92,18 @@ export default function Admin() {
                     {p.stock === 0 ? 'Sold out' : p.stock}
                   </td>
                   <td>
-                    <Link to={`/admin/products/${p.id}/edit`} aria-label={`Edit ${p.name}`}>
-                      Edit
-                    </Link>
+                    <div className="row-actions">
+                      <Link to={`/admin/products/${p.id}/edit`} aria-label={`Edit ${p.name}`}>
+                        Edit
+                      </Link>
+                      <Button
+                        variant="danger"
+                        aria-label={`Delete ${p.name}`}
+                        onClick={() => setDeletingId(p.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -79,6 +111,22 @@ export default function Admin() {
           </table>
         </div>
       )}
+      <ConfirmDialog
+        open={confirming !== null}
+        title="Delete this product?"
+        confirmLabel={deleting ? 'Deleting…' : 'Yes, delete product'}
+        cancelLabel="Keep product"
+        busy={deleting}
+        onConfirm={() => confirming && remove(confirming)}
+        onCancel={() => setDeletingId(null)}
+      >
+        {confirming && (
+          <p>
+            <strong>{confirming.name}</strong> will be removed from the catalog. Existing bookings
+            keep their details. This can't be undone.
+          </p>
+        )}
+      </ConfirmDialog>
     </>
   );
 }
