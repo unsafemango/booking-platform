@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import type { Product } from '../types.ts';
@@ -96,5 +96,54 @@ describe('Admin catalog list', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Service unavailable');
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('deletes a product after confirmation', async () => {
+    const fetchMock = mockFetch(200, [loft, cabin]);
+    renderAdmin();
+
+    await screen.findByRole('table');
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Alpine Cabin' }));
+    const dialog = screen.getByRole('alertdialog', { name: 'Delete this product?' });
+    expect(dialog).toHaveTextContent('Alpine Cabin will be removed from the catalog.');
+
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Yes, delete product' }));
+
+    expect(await screen.findByText('Alpine Cabin deleted')).toBeInTheDocument();
+    expect(String(fetchMock.mock.lastCall?.[0])).toBe('/api/products/p2');
+    expect(fetchMock.mock.lastCall?.[1]?.method).toBe('DELETE');
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('rowheader', { name: 'Alpine Cabin' })).not.toBeInTheDocument();
+    expect(screen.getByRole('rowheader', { name: 'Harbour Loft' })).toBeInTheDocument();
+  });
+
+  it('keeps the product when the admin backs out', async () => {
+    const fetchMock = mockFetch(200, [loft]);
+    renderAdmin();
+
+    await screen.findByRole('table');
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Harbour Loft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Keep product' }));
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('rowheader', { name: 'Harbour Loft' })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the row and shows the error when the delete fails', async () => {
+    const fetchMock = mockFetch(200, [loft]);
+    renderAdmin();
+
+    await screen.findByRole('table');
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Harbour Loft' }));
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'Product has open bookings' }), { status: 409 }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, delete product' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Product has open bookings');
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('rowheader', { name: 'Harbour Loft' })).toBeInTheDocument();
   });
 });
