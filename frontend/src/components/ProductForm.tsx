@@ -9,6 +9,34 @@ import type { ProductInput } from '../types.ts';
 import Button from './Button.tsx';
 import Input from './Input.tsx';
 
+/** The URL to preview, or null while the field holds something that can't be an image link. */
+function previewUrl(value: string): string | null {
+  const trimmed = value.trim();
+  if (!/^https?:\/\//i.test(trimmed)) return null;
+  try {
+    return new URL(trimmed).href;
+  } catch {
+    return null;
+  }
+}
+
+function ImagePreview({ url }: { url: string }) {
+  // Remember which URL failed, so typing a new one retries without resetting state by hand.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  if (failedUrl === url) {
+    return (
+      <p className="image-preview muted" role="status">
+        Couldn't load an image from this URL.
+      </p>
+    );
+  }
+  return (
+    <figure className="image-preview">
+      <img src={url} alt="Preview of the product image" onError={() => setFailedUrl(url)} />
+    </figure>
+  );
+}
+
 interface ProductFormProps {
   /** Values to start from when editing; empty for a new product. */
   initial?: ProductInput;
@@ -31,6 +59,7 @@ export default function ProductForm({
   const [values, setValues] = useState<ProductFormValues>(() => toFormValues(initial));
   const [errors, setErrors] = useState<ProductFormErrors>({});
   const descriptionId = useId();
+  const imageUrl = previewUrl(values.imageUrl);
 
   useEffect(() => {
     if (serverErrors) setErrors(serverErrors);
@@ -101,6 +130,7 @@ export default function ProductForm({
         error={errors.imageUrl}
         placeholder="https://…"
       />
+      {imageUrl && !errors.imageUrl && <ImagePreview url={imageUrl} />}
       <Button type="submit" disabled={busy}>
         {submitLabel}
       </Button>

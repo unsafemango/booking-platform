@@ -146,3 +146,65 @@ describe('ProductForm server errors', () => {
     expect(image).not.toHaveAttribute('aria-invalid');
   });
 });
+
+describe('ProductForm image preview', () => {
+  const preview = () => screen.queryByRole('img', { name: 'Preview of the product image' });
+
+  it('previews an http(s) image URL as the admin types it', () => {
+    render(<ProductForm submitLabel="Save" onSubmit={() => {}} />);
+    expect(preview()).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Image URL'), { target: { value: 'not a url' } });
+    expect(preview()).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Image URL'), {
+      target: { value: ' https://img.example.com/loft.jpg ' },
+    });
+    expect(preview()).toHaveAttribute('src', 'https://img.example.com/loft.jpg');
+  });
+
+  it('shows the existing image when editing', () => {
+    const product = {
+      name: 'Lamp',
+      description: null,
+      category: 'Home',
+      price: 12.5,
+      stock: 4,
+      imageUrl: 'https://img.example.com/lamp.png',
+    };
+    render(<ProductForm initial={product} submitLabel="Save" onSubmit={() => {}} />);
+    expect(preview()).toHaveAttribute('src', 'https://img.example.com/lamp.png');
+  });
+
+  it('says so when the image fails to load and retries a new URL', () => {
+    render(<ProductForm submitLabel="Save" onSubmit={() => {}} />);
+    const field = screen.getByLabelText('Image URL');
+
+    fireEvent.change(field, { target: { value: 'https://img.example.com/missing.jpg' } });
+    fireEvent.error(preview()!);
+    expect(preview()).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent("Couldn't load an image from this URL.");
+
+    fireEvent.change(field, { target: { value: 'https://img.example.com/loft.jpg' } });
+    expect(preview()).toHaveAttribute('src', 'https://img.example.com/loft.jpg');
+  });
+
+  it('hides the preview while the field has an error', () => {
+    render(
+      <ProductForm
+        initial={{
+          name: 'Lamp',
+          description: null,
+          category: 'Home',
+          price: 1,
+          stock: 1,
+          imageUrl: 'https://img.example.com/lamp.png',
+        }}
+        serverErrors={{ imageUrl: 'must be a valid URL' }}
+        submitLabel="Save"
+        onSubmit={() => {}}
+      />,
+    );
+    expect(preview()).not.toBeInTheDocument();
+  });
+});
