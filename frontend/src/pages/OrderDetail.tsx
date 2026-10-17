@@ -41,18 +41,27 @@ export default function OrderDetail() {
     };
   }, [id]);
 
-  const live = useOrderUpdates((event) => {
-    if (event.orderId !== id) return;
-    if (order && order.status !== event.status) {
-      show(`Booking ${orderRef(event.orderId)} is now ${event.status.toLowerCase()}`, {
-        tone: event.status === 'CANCELLED' ? 'danger' : 'info',
-        id: `order-${event.orderId}-${event.status}`,
-      });
-    }
-    setOrder((current) =>
-      current ? { ...current, status: event.status, updatedAt: event.occurredAt } : current,
-    );
-  });
+  const live = useOrderUpdates(
+    (event) => {
+      if (event.orderId !== id) return;
+      if (order && order.status !== event.status) {
+        show(`Booking ${orderRef(event.orderId)} is now ${event.status.toLowerCase()}`, {
+          tone: event.status === 'CANCELLED' ? 'danger' : 'info',
+          id: `order-${event.orderId}-${event.status}`,
+        });
+      }
+      setOrder((current) =>
+        current ? { ...current, status: event.status, updatedAt: event.occurredAt } : current,
+      );
+    },
+    () => {
+      // Catch up on any status change missed while the connection was down.
+      if (!order) return;
+      api<Order>(`/api/orders/${encodeURIComponent(id)}`)
+        .then((data) => setOrder((current) => (current?.id === data.id ? data : current)))
+        .catch(() => {});
+    },
+  );
 
   async function cancel() {
     setCancelling(true);

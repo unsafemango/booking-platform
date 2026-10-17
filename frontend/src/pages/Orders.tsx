@@ -29,32 +29,48 @@ export default function Orders() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
+  const loadOrders = useCallback(() => {
     api<Order[]>('/api/orders')
-      .then(setOrders)
+      .then((data) => {
+        setOrders(data);
+        setError(null);
+      })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
-    loadNotifications();
-  }, [loadNotifications]);
+  }, []);
 
-  const live = useOrderUpdates((event) => {
-    const known = orders?.find((o) => o.id === event.orderId);
-    if (known && known.status !== event.status) {
-      show(`Booking ${orderRef(event.orderId)} is now ${event.status.toLowerCase()}`, {
-        tone: event.status === 'CANCELLED' ? 'danger' : 'info',
-        id: `order-${event.orderId}-${event.status}`,
-      });
-    }
-    setOrders(
-      (current) =>
-        current?.map((o) =>
-          o.id === event.orderId ? { ...o, status: event.status, updatedAt: event.occurredAt } : o,
-        ) ?? null,
-    );
-    setFlash(event.orderId);
-    setTimeout(() => setFlash((id) => (id === event.orderId ? null : id)), 1500);
-    // The notification service handles the same event; give it a moment to send the email.
-    setTimeout(loadNotifications, 500);
-  });
+  useEffect(() => {
+    loadOrders();
+    loadNotifications();
+  }, [loadOrders, loadNotifications]);
+
+  const live = useOrderUpdates(
+    (event) => {
+      const known = orders?.find((o) => o.id === event.orderId);
+      if (known && known.status !== event.status) {
+        show(`Booking ${orderRef(event.orderId)} is now ${event.status.toLowerCase()}`, {
+          tone: event.status === 'CANCELLED' ? 'danger' : 'info',
+          id: `order-${event.orderId}-${event.status}`,
+        });
+      }
+      setOrders(
+        (current) =>
+          current?.map((o) =>
+            o.id === event.orderId
+              ? { ...o, status: event.status, updatedAt: event.occurredAt }
+              : o,
+          ) ?? null,
+      );
+      setFlash(event.orderId);
+      setTimeout(() => setFlash((id) => (id === event.orderId ? null : id)), 1500);
+      // The notification service handles the same event; give it a moment to send the email.
+      setTimeout(loadNotifications, 500);
+    },
+    () => {
+      // Status changes made while the connection was down never reach us; catch up.
+      loadOrders();
+      loadNotifications();
+    },
+  );
 
   // Looked up from the live list so the dialog closes if the order is cancelled elsewhere.
   const confirming = orders?.find((o) => o.id === confirmingId && isCancellable(o)) ?? null;
