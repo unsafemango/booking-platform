@@ -531,6 +531,13 @@ main.container {
 .live.on::before {
   background: var(--ok);
 }
+.offline-banner {
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin: 0 0 12px;
+}
 .inbox {
   padding: 16px;
   position: sticky;

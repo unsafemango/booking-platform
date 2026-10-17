@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import ConfirmDialog from '../components/ConfirmDialog.tsx';
+import OfflineBanner from '../components/OfflineBanner.tsx';
 import { OrderListSkeleton } from '../components/Skeleton.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
 import { api, money, orderRef } from '../lib/api.ts';
@@ -96,6 +97,7 @@ export default function Orders() {
           <h1>My bookings</h1>
           <span className={`live ${live ? 'on' : ''}`}>{live ? 'Live' : 'Connecting…'}</span>
         </div>
+        <OfflineBanner connected={live} />
         {error && <Alert>{error}</Alert>}
         {orders === null && !error && <OrderListSkeleton />}
         {orders?.length === 0 && (

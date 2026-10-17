@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import ConfirmDialog from '../components/ConfirmDialog.tsx';
+import OfflineBanner from '../components/OfflineBanner.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
 import { ApiError, api, money, orderRef } from '../lib/api.ts';
 import { useToast } from '../lib/toast.tsx';
@@ -121,6 +122,7 @@ export default function OrderDetail() {
   return (
     <>
       {back}
+      <OfflineBanner connected={live} />
       <article className="card order order-detail">
         <div className="order-head">
           <h1>
