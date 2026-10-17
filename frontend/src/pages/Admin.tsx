@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import ConfirmDialog from '../components/ConfirmDialog.tsx';
+import Input from '../components/Input.tsx';
 import { api, money } from '../lib/api.ts';
 import { useToast } from '../lib/toast.tsx';
 import type { Product } from '../types.ts';
@@ -19,6 +20,8 @@ export default function Admin() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [adjustingId, setAdjustingId] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('All');
   const { show } = useToast();
 
   useEffect(() => {
@@ -28,6 +31,16 @@ export default function Admin() {
   }, []);
 
   const confirming = products?.find((p) => p.id === deletingId) ?? null;
+  const categories = ['All', ...new Set(products?.map((p) => p.category))];
+  // Fall back to All if the selected category's last product was deleted.
+  const activeCategory = categories.includes(category) ? category : 'All';
+  const needle = query.trim().toLowerCase();
+  const visible =
+    products?.filter(
+      (p) =>
+        (activeCategory === 'All' || p.category === activeCategory) &&
+        (needle === '' || p.name.toLowerCase().includes(needle)),
+    ) ?? [];
 
   async function adjustStock(product: Product, delta: number) {
     setAdjustingId(product.id);
@@ -80,6 +93,33 @@ export default function Admin() {
       )}
       {products?.length === 0 && <p className="muted">The catalog is empty.</p>}
       {products && products.length > 0 && (
+        <div className="filters admin-filters">
+          <Input
+            type="search"
+            aria-label="Search products by name"
+            placeholder="Search by name…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <div className="chips" role="group" aria-label="Filter by category">
+            {categories.map((c) => (
+              <button
+                key={c}
+                type="button"
+                className={`chip ${c === activeCategory ? 'active' : ''}`}
+                aria-pressed={c === activeCategory}
+                onClick={() => setCategory(c)}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {products && products.length > 0 && visible.length === 0 && (
+        <p className="muted">No products match these filters.</p>
+      )}
+      {visible.length > 0 && (
         <div className="card table-wrap">
           <table className="table">
             <caption className="sr-only">Products in the catalog</caption>
@@ -99,7 +139,7 @@ export default function Admin() {
               </tr>
             </thead>
             <tbody>
-              {products.map((p) => (
+              {visible.map((p) => (
                 <tr key={p.id}>
                   <th scope="row">
                     <Link to={`/products/${p.id}`}>{p.name}</Link>

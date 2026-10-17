@@ -196,4 +196,59 @@ describe('Admin catalog list', () => {
       screen.getByRole('button', { name: 'Remove one from Alpine Cabin stock' }),
     ).toBeEnabled();
   });
+
+  it('filters the list by name search', async () => {
+    mockFetch(200, [loft, kayak, cabin]);
+    renderAdmin();
+
+    const table = await screen.findByRole('table', { name: 'Products in the catalog' });
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search products by name' }), {
+      target: { value: 'cabin' },
+    });
+    expect(
+      within(table)
+        .getAllByRole('rowheader')
+        .map((h) => h.textContent),
+    ).toEqual(['Alpine Cabin']);
+  });
+
+  it('filters the list by category chips built from the catalog', async () => {
+    mockFetch(200, [loft, kayak, cabin]);
+    renderAdmin();
+
+    const table = await screen.findByRole('table', { name: 'Products in the catalog' });
+    const group = screen.getByRole('group', { name: 'Filter by category' });
+    expect(
+      within(group)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['All', 'Experiences', 'Stays']);
+
+    fireEvent.click(within(group).getByRole('button', { name: 'Experiences' }));
+    expect(within(group).getByRole('button', { name: 'Experiences' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(
+      within(table)
+        .getAllByRole('rowheader')
+        .map((h) => h.textContent),
+    ).toEqual(['Kayak Tour']);
+
+    fireEvent.click(within(group).getByRole('button', { name: 'All' }));
+    expect(within(table).getAllByRole('rowheader')).toHaveLength(3);
+  });
+
+  it('says so when no product matches the filters', async () => {
+    mockFetch(200, [loft, kayak, cabin]);
+    renderAdmin();
+
+    await screen.findByRole('table', { name: 'Products in the catalog' });
+    fireEvent.click(screen.getByRole('button', { name: 'Experiences' }));
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search products by name' }), {
+      target: { value: 'loft' },
+    });
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.getByText('No products match these filters.')).toBeInTheDocument();
+  });
 });
