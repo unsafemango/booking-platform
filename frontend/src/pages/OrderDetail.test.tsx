@@ -169,6 +169,39 @@ describe('Order detail page', () => {
     expect(screen.getByRole('button', { name: 'Cancel booking' })).toBeEnabled();
   });
 
+  it('shows the offline banner while a live connection is down', async () => {
+    mockFetch(200, loftOrder);
+    renderDetail();
+    await screen.findByRole('heading', { name: 'Booking #AAAAAAAA' });
+    expect(screen.queryByText(/Live updates are paused/)).not.toBeInTheDocument();
+
+    act(() => socket.emit('connect'));
+    act(() => socket.emit('disconnect'));
+    expect(screen.getByText(/Live updates are paused/)).toBeInTheDocument();
+
+    act(() => socket.emit('connect'));
+    expect(screen.queryByText(/Live updates are paused/)).not.toBeInTheDocument();
+  });
+
+  it('reloads the order on reconnect to catch up on missed changes', async () => {
+    const fetchMock = mockFetch(200, loftOrder);
+    renderDetail();
+    await screen.findByRole('heading', { name: 'Booking #AAAAAAAA' });
+
+    act(() => socket.emit('connect'));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    act(() => socket.emit('disconnect'));
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ ...loftOrder, status: 'CONFIRMED' }), { status: 200 }),
+    );
+    act(() => socket.emit('connect'));
+
+    expect(await screen.findByText('confirmed')).toHaveClass('badge-confirmed');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.lastCall?.[0])).toBe(`/api/orders/${loftOrder.id}`);
+  });
+
   it('applies live status updates for this order only', async () => {
     mockFetch(200, loftOrder);
     renderDetail();

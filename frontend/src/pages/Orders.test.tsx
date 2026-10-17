@@ -113,6 +113,50 @@ describe('Orders live updates', () => {
     expect(screen.getByText('Connecting…')).toBeInTheDocument();
   });
 
+  it('shows the offline banner only after a live connection drops', async () => {
+    mockApi([loftOrder], () => []);
+    renderOrders();
+    await screen.findByText('Harbour Loft', { exact: false });
+    expect(screen.queryByText(/Live updates are paused/)).not.toBeInTheDocument();
+
+    act(() => socket.emit('connect'));
+    expect(screen.queryByText(/Live updates are paused/)).not.toBeInTheDocument();
+
+    act(() => socket.emit('disconnect'));
+    expect(screen.getByText(/Live updates are paused/)).toBeInTheDocument();
+
+    act(() => socket.emit('connect'));
+    expect(screen.queryByText(/Live updates are paused/)).not.toBeInTheDocument();
+  });
+
+  it('refetches orders and emails on reconnect but not on the first connect', async () => {
+    let orders = [loftOrder];
+    let emails: Notification[] = [];
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const body = String(input) === '/api/orders' ? orders : emails;
+      return new Response(JSON.stringify(body), { status: 200 });
+    });
+    renderOrders();
+    await screen.findByText('Nothing yet.');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    act(() => socket.emit('connect'));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    act(() => socket.emit('disconnect'));
+    // Missed while offline: the status change and its email.
+    orders = [{ ...loftOrder, status: 'CONFIRMED' }];
+    emails = [confirmedEmail];
+    act(() => socket.emit('connect'));
+
+    expect(await screen.findByText('Your booking is confirmed')).toBeInTheDocument();
+    expect(within(orderCard(loftOrder.id)).getByText('confirmed')).toHaveClass('badge-confirmed');
+    expect(fetchMock.mock.calls.slice(2).map((call) => String(call[0]))).toEqual([
+      '/api/orders',
+      '/api/notifications',
+    ]);
+  });
+
   it('changes the status of the matching order in place', async () => {
     mockApi([loftOrder, kayakOrder], () => []);
     renderOrders();
