@@ -8,9 +8,13 @@ import {
   type ReactNode,
 } from 'react';
 import { api, tokenStore } from './api.ts';
+import { tokenExpiresAt } from './jwt.ts';
 import type { AuthResponse, User } from '../types.ts';
 
 const USER_KEY = 'booking.user';
+
+// setTimeout overflows above this delay and would fire immediately.
+const MAX_TIMEOUT_MS = 2_147_483_647;
 
 export interface AuthContextValue {
   user: User | null;
@@ -23,8 +27,16 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 function loadUser(): User | null {
   try {
+    const token = tokenStore.get();
     const stored = localStorage.getItem(USER_KEY);
-    return tokenStore.get() && stored ? (JSON.parse(stored) as User) : null;
+    if (!token || !stored) return null;
+    const expiresAt = tokenExpiresAt(token);
+    if (expiresAt !== null && expiresAt <= Date.now()) {
+      tokenStore.clear();
+      localStorage.removeItem(USER_KEY);
+      return null;
+    }
+    return JSON.parse(stored) as User;
   } catch {
     return null;
   }
@@ -50,6 +62,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener('auth:expired', logout);
     return () => window.removeEventListener('auth:expired', logout);
   }, [logout]);
+
+  // Log out as soon as the token's exp passes, instead of waiting for a 401.
+  useEffect(() => {
+    if (!user) return;
+    const token = tokenStore.get();
+    const expiresAt = token ? tokenExpiresAt(token) : null;
+    if (expiresAt === null) return;
+    const delay = expiresAt - Date.now();
+    if (delay > MAX_TIMEOUT_MS) return;
+    const timer = window.setTimeout(logout, Math.max(0, delay));
+    return () => window.clearTimeout(timer);
+  }, [user, logout]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
