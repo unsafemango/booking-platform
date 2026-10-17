@@ -18,6 +18,7 @@ export default function Admin() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [adjustingId, setAdjustingId] = useState<string | null>(null);
   const { show } = useToast();
 
   useEffect(() => {
@@ -27,6 +28,23 @@ export default function Admin() {
   }, []);
 
   const confirming = products?.find((p) => p.id === deletingId) ?? null;
+
+  async function adjustStock(product: Product, delta: number) {
+    setAdjustingId(product.id);
+    setError(null);
+    const { id, ...input } = product;
+    try {
+      const saved = await api<Product>(`/api/products/${id}`, {
+        method: 'PUT',
+        body: { ...input, stock: product.stock + delta },
+      });
+      setProducts((current) => current?.map((p) => (p.id === id ? saved : p)) ?? null);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setAdjustingId(null);
+    }
+  }
 
   async function remove(product: Product) {
     setDeleting(true);
@@ -88,8 +106,28 @@ export default function Admin() {
                   </th>
                   <td>{p.category}</td>
                   <td className="num">{money(p.price)}</td>
-                  <td className={`num stock ${p.stock < LOW_STOCK ? 'low' : ''}`}>
-                    {p.stock === 0 ? 'Sold out' : p.stock}
+                  <td className="num">
+                    <div className="qty stock-adjust">
+                      <Button
+                        variant="ghost"
+                        aria-label={`Remove one from ${p.name} stock`}
+                        disabled={p.stock === 0 || adjustingId === p.id}
+                        onClick={() => adjustStock(p, -1)}
+                      >
+                        −
+                      </Button>
+                      <span className={`stock ${p.stock < LOW_STOCK ? 'low' : ''}`}>
+                        {p.stock === 0 ? 'Sold out' : p.stock}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        aria-label={`Add one to ${p.name} stock`}
+                        disabled={adjustingId === p.id}
+                        onClick={() => adjustStock(p, 1)}
+                      >
+                        +
+                      </Button>
+                    </div>
                   </td>
                   <td>
                     <div className="row-actions">

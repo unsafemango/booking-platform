@@ -146,4 +146,54 @@ describe('Admin catalog list', () => {
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(screen.getByRole('rowheader', { name: 'Harbour Loft' })).toBeInTheDocument();
   });
+
+  it('adjusts stock inline and shows the saved count', async () => {
+    const fetchMock = mockFetch(200, [loft]);
+    renderAdmin();
+
+    await screen.findByRole('table');
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ ...loft, stock: 13 }), { status: 200 }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add one to Harbour Loft stock' }));
+
+    expect(await screen.findByText('13')).toBeInTheDocument();
+    expect(String(fetchMock.mock.lastCall?.[0])).toBe('/api/products/p1');
+    const init = fetchMock.mock.lastCall?.[1];
+    expect(init?.method).toBe('PUT');
+    expect(JSON.parse(String(init?.body))).toEqual({
+      name: 'Harbour Loft',
+      description: 'Two nights by the water',
+      category: 'Stays',
+      price: 240,
+      stock: 13,
+      imageUrl: null,
+    });
+  });
+
+  it('can not take stock below zero', async () => {
+    mockFetch(200, [kayak]);
+    renderAdmin();
+
+    await screen.findByRole('table');
+    expect(screen.getByRole('button', { name: 'Remove one from Kayak Tour stock' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add one to Kayak Tour stock' })).toBeEnabled();
+  });
+
+  it('keeps the old count and shows the error when a stock change fails', async () => {
+    const fetchMock = mockFetch(200, [cabin]);
+    renderAdmin();
+
+    await screen.findByRole('table');
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'Admins only' }), { status: 403 }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Remove one from Alpine Cabin stock' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Admins only');
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Remove one from Alpine Cabin stock' }),
+    ).toBeEnabled();
+  });
 });

@@ -700,6 +700,10 @@ p.image-preview {
 .table .stock {
   font-size: inherit;
 }
+.table .stock-adjust {
+  justify-content: flex-end;
+  white-space: nowrap;
+}
 .table .row-actions {
   display: flex;
   justify-content: flex-end;
