@@ -9,6 +9,7 @@ import AdminEditProduct from './pages/AdminEditProduct.tsx';
 import AdminNewProduct from './pages/AdminNewProduct.tsx';
 import Cart from './pages/Cart.tsx';
 import Login from './pages/Login.tsx';
+import NotFound from './pages/NotFound.tsx';
 import OrderDetail from './pages/OrderDetail.tsx';
 import Orders from './pages/Orders.tsx';
 import ProductDetail from './pages/ProductDetail.tsx';
@@ -97,7 +98,7 @@ export default function App() {
           />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
     </>
