@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { makeJwt } from '../test/jwt.ts';
 import type { AuthResponse, User } from '../types.ts';
 import { ApiError, api, tokenStore } from './api.ts';
 import { AuthProvider, useAuth } from './auth.tsx';
@@ -152,5 +153,67 @@ describe('auth context', () => {
 
   it('throws when used outside the provider', () => {
     expect(() => renderHook(() => useAuth())).toThrow('useAuth must be used inside <AuthProvider>');
+  });
+});
+
+describe('auth context token expiry', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('clears a stored token that has already expired', () => {
+    tokenStore.set(makeJwt(Date.now() - 1000));
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+
+    const { result } = renderAuth();
+
+    expect(result.current.user).toBeNull();
+    expect(result.current.expiresAt).toBeNull();
+    expect(tokenStore.get()).toBeNull();
+    expect(localStorage.getItem(USER_KEY)).toBeNull();
+  });
+
+  it('exposes expiresAt and logs out when the token expires', () => {
+    vi.useFakeTimers();
+    const expiresAt = Date.now() + 60_000;
+    tokenStore.set(makeJwt(expiresAt));
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    const { result } = renderAuth();
+
+    expect(result.current.user).toEqual(user);
+    expect(result.current.expiresAt).toBe(Math.floor(expiresAt / 1000) * 1000);
+
+    act(() => vi.advanceTimersByTime(59_000));
+    expect(result.current.user).toEqual(user);
+
+    act(() => vi.advanceTimersByTime(1000));
+    expect(result.current.user).toBeNull();
+    expect(result.current.expiresAt).toBeNull();
+    expect(tokenStore.get()).toBeNull();
+  });
+
+  it('schedules the logout from the token returned by login', async () => {
+    vi.useFakeTimers();
+    const token = makeJwt(Date.now() + 30_000);
+    mockFetch(200, { ...authResponse, token });
+    const { result } = renderAuth();
+
+    await act(async () => {
+      await result.current.login('ada@example.com', 'secret');
+    });
+    expect(result.current.expiresAt).not.toBeNull();
+
+    act(() => vi.advanceTimersByTime(30_000));
+    expect(result.current.user).toBeNull();
+  });
+
+  it('keeps a session with no exp claim signed in', () => {
+    vi.useFakeTimers();
+    signIn();
+    const { result } = renderAuth();
+
+    expect(result.current.expiresAt).toBeNull();
+    act(() => vi.advanceTimersByTime(24 * 60 * 60 * 1000));
+    expect(result.current.user).toEqual(user);
   });
 });
