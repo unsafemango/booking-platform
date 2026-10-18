@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import App from './App.tsx';
@@ -80,6 +80,30 @@ describe('/admin route guard', () => {
 
     expect(screen.getByRole('heading', { name: 'Admin' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute('href', '/admin');
+    expect(await screen.findByRole('link', { name: 'Harbour Loft' })).toBeInTheDocument();
+  });
+});
+
+describe('unknown routes', () => {
+  it('show a not-found page naming the missing path, without calling the API', () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    renderAt('/no/such/page');
+
+    expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument();
+    expect(screen.getByText('/no/such/page', { selector: 'code' })).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('link back to the catalog', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify([loft]), { status: 200 }),
+    );
+    renderAt('/missing');
+
+    fireEvent.click(screen.getByRole('link', { name: 'Browse bookings' }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/);
+    expect(screen.queryByRole('heading', { name: 'Page not found' })).not.toBeInTheDocument();
     expect(await screen.findByRole('link', { name: 'Harbour Loft' })).toBeInTheDocument();
   });
 });
