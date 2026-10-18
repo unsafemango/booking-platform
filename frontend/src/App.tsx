@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Alert from './components/Alert.tsx';
 import Nav from './components/Nav.tsx';
+import SessionExpiryWarning from './components/SessionExpiryWarning.tsx';
 import { useAuth } from './lib/auth.tsx';
 import Admin from './pages/Admin.tsx';
 import AdminEditProduct from './pages/AdminEditProduct.tsx';
@@ -35,6 +36,7 @@ export default function App() {
     <>
       <Nav />
       <main className="container">
+        <SessionExpiryWarning />
         <Routes>
           <Route path="/" element={<Products />} />
           <Route path="/products/:id" element={<ProductDetail />} />

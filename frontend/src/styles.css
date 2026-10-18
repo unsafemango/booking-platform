@@ -538,6 +538,20 @@ main.container {
   border-radius: 8px;
   margin: 0 0 12px;
 }
+.session-warning {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin: 0 0 12px;
+}
+.session-warning span {
+  flex: 1 1 240px;
+}
 .inbox {
   padding: 16px;
   position: sticky;
