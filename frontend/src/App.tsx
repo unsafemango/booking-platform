@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Alert from './components/Alert.tsx';
+import ErrorBoundary from './components/ErrorBoundary.tsx';
 import Nav from './components/Nav.tsx';
 import SessionExpiryWarning from './components/SessionExpiryWarning.tsx';
 import { useAuth } from './lib/auth.tsx';
@@ -33,73 +34,77 @@ function RequireAdmin({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
+  const { pathname } = useLocation();
+
   return (
     <>
       <Nav />
       <main className="container">
         <SessionExpiryWarning />
-        <Routes>
-          <Route path="/" element={<Products />} />
-          <Route path="/products/:id" element={<ProductDetail />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route
-            path="/orders"
-            element={
-              <RequireAuth>
-                <Orders />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/orders/:id"
-            element={
-              <RequireAuth>
-                <OrderDetail />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <RequireAuth>
-                <Profile />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <RequireAuth>
-                <RequireAdmin>
-                  <Admin />
-                </RequireAdmin>
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/admin/products/new"
-            element={
-              <RequireAuth>
-                <RequireAdmin>
-                  <AdminNewProduct />
-                </RequireAdmin>
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/admin/products/:id/edit"
-            element={
-              <RequireAuth>
-                <RequireAdmin>
-                  <AdminEditProduct />
-                </RequireAdmin>
-              </RequireAuth>
-            }
-          />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <ErrorBoundary resetKey={pathname}>
+          <Routes>
+            <Route path="/" element={<Products />} />
+            <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route
+              path="/orders"
+              element={
+                <RequireAuth>
+                  <Orders />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/orders/:id"
+              element={
+                <RequireAuth>
+                  <OrderDetail />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <RequireAuth>
+                  <Profile />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <RequireAuth>
+                  <RequireAdmin>
+                    <Admin />
+                  </RequireAdmin>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/products/new"
+              element={
+                <RequireAuth>
+                  <RequireAdmin>
+                    <AdminNewProduct />
+                  </RequireAdmin>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/products/:id/edit"
+              element={
+                <RequireAuth>
+                  <RequireAdmin>
+                    <AdminEditProduct />
+                  </RequireAdmin>
+                </RequireAuth>
+              }
+            />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ErrorBoundary>
       </main>
     </>
   );

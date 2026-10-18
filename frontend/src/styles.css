@@ -304,6 +304,9 @@ main.container {
   text-align: center;
   padding: 60px 0;
 }
+.actions.center {
+  justify-content: center;
+}
 
 .sr-only {
   position: absolute;
