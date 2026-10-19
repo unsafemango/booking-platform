@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ReactNode } from 'react';
+import { lazy, Suspense, useRef, type ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Alert from './components/Alert.tsx';
 import ErrorBoundary from './components/ErrorBoundary.tsx';
@@ -6,6 +6,7 @@ import Nav from './components/Nav.tsx';
 import SessionExpiryWarning from './components/SessionExpiryWarning.tsx';
 import { PageLoading } from './components/Skeleton.tsx';
 import { useAuth } from './lib/auth.tsx';
+import { useFocusHeadingOnRouteChange } from './lib/useFocusHeadingOnRouteChange.ts';
 import Login from './pages/Login.tsx';
 import NotFound from './pages/NotFound.tsx';
 import Products from './pages/Products.tsx';
@@ -38,11 +39,13 @@ function RequireAdmin({ children }: { children: ReactNode }) {
 
 export default function App() {
   const { pathname } = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
+  useFocusHeadingOnRouteChange(mainRef, pathname);
 
   return (
     <>
       <Nav />
-      <main className="container">
+      <main className="container" ref={mainRef}>
         <SessionExpiryWarning />
         <ErrorBoundary resetKey={pathname}>
           <Suspense fallback={<PageLoading />}>

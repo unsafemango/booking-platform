@@ -56,6 +56,10 @@ h1 {
   font-size: 1.6rem;
   margin: 0 0 1rem;
 }
+/* Headings get programmatic focus on navigation; no ring since they are not interactive. */
+h1[tabindex='-1']:focus {
+  outline: none;
+}
 h2 {
   font-size: 1.05rem;
   margin: 0 0 0.75rem;
