@@ -58,3 +58,7 @@ export function OrderListSkeleton({ count = 3 }: { count?: number }) {
     </>
   );
 }
+
+export function PageLoading() {
+  return <Loading label="Loading page…" />;
+}

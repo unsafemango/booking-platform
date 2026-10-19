@@ -78,7 +78,7 @@ describe('/admin route guard', () => {
     logInAs(admin);
     renderAt('/admin');
 
-    expect(screen.getByRole('heading', { name: 'Admin' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Admin' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute('href', '/admin');
     expect(await screen.findByRole('link', { name: 'Harbour Loft' })).toBeInTheDocument();
   });
