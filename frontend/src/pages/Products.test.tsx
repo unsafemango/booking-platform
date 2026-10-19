@@ -108,7 +108,9 @@ describe('Products page', () => {
     renderProducts();
     await screen.findByRole('heading', { name: 'Harbour Loft' });
 
-    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'kayak' } });
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search the catalog' }), {
+      target: { value: 'kayak' },
+    });
 
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'Harbour Loft' })).not.toBeInTheDocument(),
@@ -134,6 +136,8 @@ describe('Products page', () => {
     );
     expect(lastUrl(fetchMock).searchParams.get('category')).toBe('Stays');
     expect(stays).toHaveClass('active');
+    expect(stays).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'false');
 
     fireEvent.click(screen.getByRole('button', { name: 'All' }));
 

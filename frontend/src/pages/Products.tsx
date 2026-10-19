@@ -46,6 +46,7 @@ export default function Products() {
         <div className="filters">
           <Input
             type="search"
+            aria-label="Search the catalog"
             placeholder="Search stays, tours, events…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -55,6 +56,7 @@ export default function Products() {
               <button
                 key={c}
                 className={`chip ${c === category ? 'active' : ''}`}
+                aria-pressed={c === category}
                 onClick={() => setCategory(c)}
               >
                 {c}

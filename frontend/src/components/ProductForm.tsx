@@ -5,6 +5,7 @@ import {
   type ProductFormErrors,
   type ProductFormValues,
 } from '../lib/productForm.ts';
+import { useFocusFirstInvalid } from '../lib/useFocusFirstInvalid.ts';
 import type { ProductInput } from '../types.ts';
 import Button from './Button.tsx';
 import Input from './Input.tsx';
@@ -60,10 +61,13 @@ export default function ProductForm({
   const [errors, setErrors] = useState<ProductFormErrors>({});
   const descriptionId = useId();
   const imageUrl = previewUrl(values.imageUrl);
+  const [formRef, focusFirstInvalid] = useFocusFirstInvalid();
 
   useEffect(() => {
-    if (serverErrors) setErrors(serverErrors);
-  }, [serverErrors]);
+    if (!serverErrors) return;
+    setErrors(serverErrors);
+    focusFirstInvalid();
+  }, [serverErrors, focusFirstInvalid]);
 
   const set =
     (key: keyof ProductFormValues) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -76,10 +80,11 @@ export default function ProductForm({
     const result = validateProduct(values);
     setErrors(result.errors);
     if (result.input) onSubmit(result.input);
+    else focusFirstInvalid();
   }
 
   return (
-    <form className="card product-form" onSubmit={submit} noValidate>
+    <form className="card product-form" ref={formRef} onSubmit={submit} noValidate>
       <Input label="Name" value={values.name} onChange={set('name')} error={errors.name} />
       <Input
         label="Category"

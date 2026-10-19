@@ -79,6 +79,15 @@ describe('ProductForm', () => {
     expect(screen.getByLabelText('Name')).not.toHaveAttribute('aria-invalid');
   });
 
+  it('moves focus to the first invalid field when a submit is rejected', () => {
+    render(<ProductForm submitLabel="Save" onSubmit={() => {}} />);
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Lamp' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(screen.getByLabelText('Category')).toHaveFocus();
+  });
+
   it('starts from the initial product and submits the edited values', () => {
     const onSubmit = vi.fn();
     const product = {
@@ -140,6 +149,7 @@ describe('ProductForm server errors', () => {
 
     const image = screen.getByLabelText('Image URL');
     expect(image).toHaveAttribute('aria-invalid', 'true');
+    expect(image).toHaveFocus();
     expect(image).toHaveAccessibleDescription('must be a valid URL');
 
     fireEvent.change(image, { target: { value: 'https://example.com/a.png' } });

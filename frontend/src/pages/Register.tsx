@@ -6,6 +6,7 @@ import Input from '../components/Input.tsx';
 import { ApiError } from '../lib/api.ts';
 import { useAuth } from '../lib/auth.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
+import { useFocusFirstInvalid } from '../lib/useFocusFirstInvalid.ts';
 
 interface RegisterForm {
   name: string;
@@ -21,6 +22,7 @@ export default function Register() {
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Partial<Record<keyof RegisterForm, string>>>({});
   const [busy, setBusy] = useState(false);
+  const [formRef, focusFirstInvalid] = useFocusFirstInvalid();
   useDocumentTitle('Create an account');
 
   const set = (key: keyof RegisterForm) => (e: ChangeEvent<HTMLInputElement>) =>
@@ -37,13 +39,14 @@ export default function Register() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));
       setFields(err instanceof ApiError ? (err.fields ?? {}) : {});
+      focusFirstInvalid();
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <form className="card auth" onSubmit={submit}>
+    <form className="card auth" ref={formRef} onSubmit={submit}>
       <h1>Create an account</h1>
       <Input
         label="Name"
