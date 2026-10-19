@@ -6,6 +6,7 @@ import { api, ApiError, money, orderRef } from '../lib/api.ts';
 import { useAuth } from '../lib/auth.tsx';
 import { useCart, type CartLine } from '../lib/cart.tsx';
 import { useToast } from '../lib/toast.tsx';
+import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import type { Order, PlaceOrderRequest, Product } from '../types.ts';
 
 /** Reloads every product in the cart; products that fail to load are left out. */
@@ -27,6 +28,7 @@ export default function Cart() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useDocumentTitle('Cart');
 
   async function checkout() {
     if (!user) {

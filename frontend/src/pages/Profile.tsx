@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import { api } from '../lib/api.ts';
+import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import type { Role, User } from '../types.ts';
 
 const roleLabels: Record<Role, string> = { CUSTOMER: 'Customer', ADMIN: 'Administrator' };
@@ -9,6 +10,7 @@ const roleLabels: Record<Role, string> = { CUSTOMER: 'Customer', ADMIN: 'Adminis
 export default function Profile() {
   const [profile, setProfile] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
+  useDocumentTitle('Profile');
 
   useEffect(() => {
     let active = true;

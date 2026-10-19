@@ -4,6 +4,7 @@ import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import { ApiError, api, money } from '../lib/api.ts';
 import { useCart } from '../lib/cart.tsx';
+import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import type { Product } from '../types.ts';
 
 export default function ProductDetail() {
@@ -12,6 +13,7 @@ export default function ProductDetail() {
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const cart = useCart();
+  useDocumentTitle(product?.name ?? (notFound ? 'Listing not found' : null));
 
   useEffect(() => {
     let active = true;

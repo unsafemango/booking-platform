@@ -6,6 +6,7 @@ import Input from '../components/Input.tsx';
 import { ProductGridSkeleton } from '../components/Skeleton.tsx';
 import { api, money } from '../lib/api.ts';
 import { useCart } from '../lib/cart.tsx';
+import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import type { Product } from '../types.ts';
 
 const CATEGORIES = ['All', 'Stays', 'Experiences', 'Events'] as const;
@@ -18,6 +19,7 @@ export default function Products() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const cart = useCart();
+  useDocumentTitle();
 
   useEffect(() => {
     const params = new URLSearchParams();

@@ -4,6 +4,7 @@ import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import Input from '../components/Input.tsx';
 import { useAuth } from '../lib/auth.tsx';
+import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 
 export default function Login() {
   const { login } = useAuth();
@@ -13,6 +14,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  useDocumentTitle('Log in');
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();

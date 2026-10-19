@@ -8,6 +8,7 @@ import { OrderListSkeleton } from '../components/Skeleton.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
 import { api, money, orderRef } from '../lib/api.ts';
 import { useToast } from '../lib/toast.tsx';
+import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import { useOrderUpdates } from '../lib/useOrderUpdates.ts';
 import type { Notification, Order } from '../types.ts';
 
@@ -23,6 +24,7 @@ export default function Orders() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const { show } = useToast();
+  useDocumentTitle('My bookings');
 
   const loadNotifications = useCallback(() => {
     api<Notification[]>('/api/notifications')

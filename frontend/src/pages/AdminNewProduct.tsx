@@ -5,6 +5,7 @@ import ProductForm from '../components/ProductForm.tsx';
 import { api } from '../lib/api.ts';
 import { serverFieldErrors, type ProductFormErrors } from '../lib/productForm.ts';
 import { useToast } from '../lib/toast.tsx';
+import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import type { Product, ProductInput } from '../types.ts';
 
 export default function AdminNewProduct() {
@@ -13,6 +14,7 @@ export default function AdminNewProduct() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<ProductFormErrors>();
+  useDocumentTitle('New product');
 
   async function create(input: ProductInput) {
     setBusy(true);

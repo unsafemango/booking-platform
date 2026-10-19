@@ -1,7 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 
 export default function NotFound() {
   const { pathname } = useLocation();
+  useDocumentTitle('Page not found');
 
   return (
     <section className="empty">

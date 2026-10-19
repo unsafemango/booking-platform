@@ -6,6 +6,7 @@ import ConfirmDialog from '../components/ConfirmDialog.tsx';
 import Input from '../components/Input.tsx';
 import { api, money } from '../lib/api.ts';
 import { useToast } from '../lib/toast.tsx';
+import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import type { Product } from '../types.ts';
 
 const LOW_STOCK = 5;
@@ -23,6 +24,7 @@ export default function Admin() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All');
   const { show } = useToast();
+  useDocumentTitle('Admin');
 
   useEffect(() => {
     api<Product[]>('/api/products')

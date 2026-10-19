@@ -7,6 +7,7 @@ import OfflineBanner from '../components/OfflineBanner.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
 import { ApiError, api, money, orderRef } from '../lib/api.ts';
 import { useToast } from '../lib/toast.tsx';
+import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import { useOrderUpdates } from '../lib/useOrderUpdates.ts';
 import type { Order } from '../types.ts';
 
@@ -19,6 +20,9 @@ export default function OrderDetail() {
   const [confirming, setConfirming] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const { show } = useToast();
+  useDocumentTitle(
+    order ? `Booking ${orderRef(order.id)}` : notFound ? 'Booking not found' : 'Booking',
+  );
 
   useEffect(() => {
     let active = true;
