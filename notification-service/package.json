@@ -16,6 +16,6 @@
   "dependencies": {
     "amqplib": "^0.10.4",
     "express": "^4.21.2",
-    "nodemailer": "^6.9.16"
+    "nodemailer": "^10.0.9"
   }
 }
