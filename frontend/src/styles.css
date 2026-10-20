@@ -78,6 +78,27 @@ h1 {
 h1[tabindex='-1']:focus {
   outline: none;
 }
+main[tabindex='-1']:focus {
+  outline: none;
+}
+
+/* Hidden until a keyboard user tabs to it as the first stop on the page. */
+.skip-link {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  padding: 8px 12px;
+  background: var(--surface);
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-weight: 600;
+  transform: translateY(-200%);
+}
+.skip-link:focus {
+  transform: none;
+}
 h2 {
   font-size: 1.05rem;
   margin: 0 0 0.75rem;

@@ -107,3 +107,20 @@ describe('unknown routes', () => {
     expect(await screen.findByRole('link', { name: 'Harbour Loft' })).toBeInTheDocument();
   });
 });
+
+describe('skip link', () => {
+  it('is the first focusable element and moves focus to the main content', () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify([loft]), { status: 200 }),
+    );
+    renderAt('/');
+
+    const skip = screen.getByRole('link', { name: 'Skip to main content' });
+    const focusable = document.querySelectorAll('a[href], button, input, select, textarea');
+    expect(focusable[0]).toBe(skip);
+
+    fireEvent.click(skip);
+    expect(screen.getByRole('main')).toHaveFocus();
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/);
+  });
+});

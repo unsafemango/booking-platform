@@ -44,8 +44,19 @@ export default function App() {
 
   return (
     <>
+      <a
+        href="#main-content"
+        className="skip-link"
+        onClick={(e) => {
+          // Focus <main> directly so the router never sees a hash-only URL change.
+          e.preventDefault();
+          mainRef.current?.focus();
+        }}
+      >
+        Skip to main content
+      </a>
       <Nav />
-      <main className="container" ref={mainRef}>
+      <main id="main-content" className="container" ref={mainRef} tabIndex={-1}>
         <SessionExpiryWarning />
         <ErrorBoundary resetKey={pathname}>
           <Suspense fallback={<PageLoading />}>
