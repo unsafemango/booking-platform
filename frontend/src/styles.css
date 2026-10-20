@@ -15,8 +15,10 @@
   color-scheme: light;
 }
 
+/* Dark palette: follows the OS unless the theme toggle picked light, or forced by picking dark.
+   Keep the two blocks below in sync. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #0f1115;
     --surface: #171a21;
     --text: #e8eaee;
@@ -31,6 +33,21 @@
     --shadow: none;
     color-scheme: dark;
   }
+}
+:root[data-theme='dark'] {
+  --bg: #0f1115;
+  --surface: #171a21;
+  --text: #e8eaee;
+  --muted: #9aa1ad;
+  --border: #2a2f3a;
+  --accent: #6d8dff;
+  --accent-text: #0f1115;
+  --danger: #ff7a7a;
+  --ok: #4fd18b;
+  --warn: #f0b04a;
+  --flash: #1f2a4a;
+  --shadow: none;
+  color-scheme: dark;
 }
 
 * {
@@ -168,6 +185,15 @@ main.container {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+.theme-select {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 0.85rem;
 }
 .pill {
   margin-left: 6px;

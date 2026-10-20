@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import Button from './Button.tsx';
+import ThemeToggle from './ThemeToggle.tsx';
 import { useAuth } from '../lib/auth.tsx';
 import { useCart } from '../lib/cart.tsx';
 
@@ -24,6 +25,7 @@ export default function Nav() {
           {user?.role === 'ADMIN' && <NavLink to="/admin">Admin</NavLink>}
         </nav>
         <div className="nav-user">
+          <ThemeToggle />
           {user ? (
             <>
               <span className="muted hide-sm">{user.name}</span>
