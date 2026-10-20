@@ -37,6 +37,19 @@
   box-sizing: border-box;
 }
 
+/* One switch for every animation and transition, including the toast,
+   dialog, skeleton pulse and the order flash fade. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -263,11 +276,6 @@ main.container {
     transform: translateY(8px);
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .toast {
-    animation: none;
-  }
-}
 
 /* Layout pieces */
 .card {
@@ -346,11 +354,6 @@ main.container {
 @keyframes skeleton-pulse {
   50% {
     opacity: 0.45;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .skeleton {
-    animation: none;
   }
 }
 
@@ -693,11 +696,6 @@ p.image-preview {
   from {
     opacity: 0;
     transform: scale(0.97);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .dialog {
-    animation: none;
   }
 }
 
