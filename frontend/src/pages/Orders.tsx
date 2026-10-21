@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
@@ -25,6 +25,23 @@ export default function Orders() {
   const [cancelling, setCancelling] = useState(false);
   const { show } = useToast();
   useDocumentTitle('My bookings');
+
+  // Pending flash and reload timers, cleared on unmount so none fire after the page is gone.
+  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const later = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      timers.current.delete(id);
+      fn();
+    }, ms);
+    timers.current.add(id);
+  }, []);
+  useEffect(() => {
+    const pending = timers.current;
+    return () => {
+      pending.forEach(clearTimeout);
+      pending.clear();
+    };
+  }, []);
 
   const loadNotifications = useCallback(() => {
     api<Notification[]>('/api/notifications')
@@ -64,9 +81,9 @@ export default function Orders() {
           ) ?? null,
       );
       setFlash(event.orderId);
-      setTimeout(() => setFlash((id) => (id === event.orderId ? null : id)), 1500);
+      later(() => setFlash((id) => (id === event.orderId ? null : id)), 1500);
       // The notification service handles the same event; give it a moment to send the email.
-      setTimeout(loadNotifications, 500);
+      later(loadNotifications, 500);
     },
     () => {
       // Status changes made while the connection was down never reach us; catch up.

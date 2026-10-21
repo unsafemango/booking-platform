@@ -313,4 +313,25 @@ describe('Orders live updates', () => {
     expect(screen.getByText('Your booking is confirmed')).toBeInTheDocument();
     expect(screen.queryByText('Nothing yet.')).not.toBeInTheDocument();
   });
+
+  it('drops pending reloads when the page unmounts', async () => {
+    const fetchMock = mockApi([loftOrder], () => []);
+    const { unmount } = renderOrders();
+    expect(await screen.findByText('Nothing yet.')).toBeInTheDocument();
+    vi.useFakeTimers();
+
+    pushUpdate({
+      type: 'order.status-changed',
+      orderId: loftOrder.id,
+      status: 'CONFIRMED',
+      previousStatus: 'PLACED',
+      total: 480,
+      occurredAt: '2026-10-07T12:05:00Z',
+    });
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });
