@@ -2,18 +2,18 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
-import { api, ApiError, money, orderRef } from '../lib/api.ts';
+import { placeOrder } from '../api/orders.ts';
+import { getProduct } from '../api/products.ts';
+import { ApiError, money, orderRef } from '../lib/api.ts';
 import { useAuth } from '../lib/auth.tsx';
 import { useCart, type CartLine } from '../lib/cart.tsx';
 import { useToast } from '../lib/toast.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
-import type { Order, PlaceOrderRequest, Product } from '../types.ts';
+import type { PlaceOrderRequest, Product } from '../types.ts';
 
 /** Reloads every product in the cart; products that fail to load are left out. */
 async function fetchLatest(lines: CartLine[]): Promise<Product[]> {
-  const results = await Promise.allSettled(
-    lines.map((l) => api<Product>(`/api/products/${l.product.id}`)),
-  );
+  const results = await Promise.allSettled(lines.map((l) => getProduct(l.product.id)));
   return results.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []));
 }
 
@@ -41,7 +41,7 @@ export default function Cart() {
       const body: PlaceOrderRequest = {
         items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity })),
       };
-      const order = await api<Order>('/api/orders', { method: 'POST', body });
+      const order = await placeOrder(body);
       clear();
       show(`Booking ${orderRef(order.id)} placed`, {
         tone: 'success',

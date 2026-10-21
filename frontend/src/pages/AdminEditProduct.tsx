@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import ProductForm from '../components/ProductForm.tsx';
-import { ApiError, api } from '../lib/api.ts';
+import { getProduct, updateProduct } from '../api/products.ts';
+import { ApiError } from '../lib/api.ts';
 import { serverFieldErrors, type ProductFormErrors } from '../lib/productForm.ts';
 import { useToast } from '../lib/toast.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
@@ -27,7 +28,7 @@ export default function AdminEditProduct() {
     setProduct(null);
     setLoadError(null);
     setNotFound(false);
-    api<Product>(`/api/products/${encodeURIComponent(id)}`)
+    getProduct(id)
       .then((data) => {
         if (active) setProduct(data);
       })
@@ -46,10 +47,7 @@ export default function AdminEditProduct() {
     setError(null);
     setFieldErrors(undefined);
     try {
-      const saved = await api<Product>(`/api/products/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        body: input,
-      });
+      const saved = await updateProduct(id, input);
       show(`Saved changes to ${saved.name}`, { tone: 'success' });
       navigate('/admin');
     } catch (e: unknown) {

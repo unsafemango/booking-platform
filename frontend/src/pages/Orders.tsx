@@ -6,7 +6,9 @@ import ConfirmDialog from '../components/ConfirmDialog.tsx';
 import OfflineBanner from '../components/OfflineBanner.tsx';
 import { OrderListSkeleton } from '../components/Skeleton.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
-import { api, money, orderRef } from '../lib/api.ts';
+import { listNotifications } from '../api/notifications.ts';
+import { cancelOrder, listOrders } from '../api/orders.ts';
+import { money, orderRef } from '../lib/api.ts';
 import { useToast } from '../lib/toast.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import { useOrderUpdates } from '../lib/useOrderUpdates.ts';
@@ -44,13 +46,13 @@ export default function Orders() {
   }, []);
 
   const loadNotifications = useCallback(() => {
-    api<Notification[]>('/api/notifications')
+    listNotifications()
       .then(setNotifications)
       .catch(() => {});
   }, []);
 
   const loadOrders = useCallback(() => {
-    api<Order[]>('/api/orders')
+    listOrders()
       .then((data) => {
         setOrders(data);
         setError(null);
@@ -98,7 +100,7 @@ export default function Orders() {
   async function cancel(id: string) {
     setCancelling(true);
     try {
-      const updated = await api<Order>(`/api/orders/${id}/cancel`, { method: 'POST' });
+      const updated = await cancelOrder(id);
       setOrders((current) => current?.map((o) => (o.id === id ? updated : o)) ?? null);
       show(`Booking ${orderRef(id)} cancelled`, { id: `order-${id}-${updated.status}` });
     } catch (e: unknown) {

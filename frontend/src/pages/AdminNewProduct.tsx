@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import ProductForm from '../components/ProductForm.tsx';
-import { api } from '../lib/api.ts';
+import { createProduct } from '../api/products.ts';
 import { serverFieldErrors, type ProductFormErrors } from '../lib/productForm.ts';
 import { useToast } from '../lib/toast.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
-import type { Product, ProductInput } from '../types.ts';
+import type { ProductInput } from '../types.ts';
 
 export default function AdminNewProduct() {
   const navigate = useNavigate();
@@ -21,7 +21,7 @@ export default function AdminNewProduct() {
     setError(null);
     setFieldErrors(undefined);
     try {
-      const product = await api<Product>('/api/products', { method: 'POST', body: input });
+      const product = await createProduct(input);
       show(`Added ${product.name} to the catalog`, { tone: 'success' });
       navigate('/admin');
     } catch (e: unknown) {

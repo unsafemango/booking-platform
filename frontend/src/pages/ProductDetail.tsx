@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
-import { ApiError, api, money } from '../lib/api.ts';
+import { getProduct } from '../api/products.ts';
+import { ApiError, money } from '../lib/api.ts';
 import { useCart } from '../lib/cart.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import type { Product } from '../types.ts';
@@ -20,7 +21,7 @@ export default function ProductDetail() {
     setProduct(null);
     setError(null);
     setNotFound(false);
-    api<Product>(`/api/products/${encodeURIComponent(id)}`)
+    getProduct(id)
       .then((data) => {
         if (active) setProduct(data);
       })

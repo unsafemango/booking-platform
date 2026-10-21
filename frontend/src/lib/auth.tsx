@@ -7,7 +7,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { api, tokenStore } from './api.ts';
+import { login as loginRequest, register as registerRequest } from '../api/auth.ts';
+import { tokenStore } from './api.ts';
 import { tokenExpiresAt } from './jwt.ts';
 import type { AuthResponse, User } from '../types.ts';
 
@@ -86,15 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       expiresAt: user ? expiresAt : null,
-      login: (email, password) =>
-        api<AuthResponse>('/api/auth/login', { method: 'POST', body: { email, password } }).then(
-          accept,
-        ),
-      register: (name, email, password) =>
-        api<AuthResponse>('/api/auth/register', {
-          method: 'POST',
-          body: { name, email, password },
-        }).then(accept),
+      login: (email, password) => loginRequest(email, password).then(accept),
+      register: (name, email, password) => registerRequest(name, email, password).then(accept),
       logout,
     }),
     [user, expiresAt, accept, logout],

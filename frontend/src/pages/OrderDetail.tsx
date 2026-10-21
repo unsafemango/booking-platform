@@ -5,7 +5,8 @@ import Button from '../components/Button.tsx';
 import ConfirmDialog from '../components/ConfirmDialog.tsx';
 import OfflineBanner from '../components/OfflineBanner.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
-import { ApiError, api, money, orderRef } from '../lib/api.ts';
+import { cancelOrder, getOrder } from '../api/orders.ts';
+import { ApiError, money, orderRef } from '../lib/api.ts';
 import { useToast } from '../lib/toast.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import { useOrderUpdates } from '../lib/useOrderUpdates.ts';
@@ -30,7 +31,7 @@ export default function OrderDetail() {
     setError(null);
     setActionError(null);
     setNotFound(false);
-    api<Order>(`/api/orders/${encodeURIComponent(id)}`)
+    getOrder(id)
       .then((data) => {
         if (active) setOrder(data);
       })
@@ -62,7 +63,7 @@ export default function OrderDetail() {
     () => {
       // Catch up on any status change missed while the connection was down.
       if (!order) return;
-      api<Order>(`/api/orders/${encodeURIComponent(id)}`)
+      getOrder(id)
         .then((data) => setOrder((current) => (current?.id === data.id ? data : current)))
         .catch(() => {});
     },
@@ -72,9 +73,7 @@ export default function OrderDetail() {
     setCancelling(true);
     setActionError(null);
     try {
-      const updated = await api<Order>(`/api/orders/${encodeURIComponent(id)}/cancel`, {
-        method: 'POST',
-      });
+      const updated = await cancelOrder(id);
       setOrder(updated);
       show(`Booking ${orderRef(id)} cancelled`, { id: `order-${id}-${updated.status}` });
     } catch (e: unknown) {

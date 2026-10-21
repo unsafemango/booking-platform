@@ -4,7 +4,8 @@ import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import Input from '../components/Input.tsx';
 import { ProductGridSkeleton } from '../components/Skeleton.tsx';
-import { api, money } from '../lib/api.ts';
+import { listProducts } from '../api/products.ts';
+import { money } from '../lib/api.ts';
 import { useCart } from '../lib/cart.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import type { Product } from '../types.ts';
@@ -22,11 +23,8 @@ export default function Products() {
   useDocumentTitle();
 
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (query) params.set('q', query);
-    if (category !== 'All') params.set('category', category);
     const timer = setTimeout(() => {
-      api<Product[]>(`/api/products?${params}`)
+      listProducts({ q: query, category: category === 'All' ? undefined : category })
         .then((data) => {
           setProducts(data);
           setError(null);

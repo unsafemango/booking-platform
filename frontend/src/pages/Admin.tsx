@@ -4,7 +4,8 @@ import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import ConfirmDialog from '../components/ConfirmDialog.tsx';
 import Input from '../components/Input.tsx';
-import { api, money } from '../lib/api.ts';
+import { deleteProduct, listProducts, updateProduct } from '../api/products.ts';
+import { money } from '../lib/api.ts';
 import { useToast } from '../lib/toast.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import type { Product } from '../types.ts';
@@ -27,7 +28,7 @@ export default function Admin() {
   useDocumentTitle('Admin');
 
   useEffect(() => {
-    api<Product[]>('/api/products')
+    listProducts()
       .then((list) => setProducts([...list].sort(byCategoryThenName)))
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
@@ -49,10 +50,7 @@ export default function Admin() {
     setError(null);
     const { id, ...input } = product;
     try {
-      const saved = await api<Product>(`/api/products/${id}`, {
-        method: 'PUT',
-        body: { ...input, stock: product.stock + delta },
-      });
+      const saved = await updateProduct(id, { ...input, stock: product.stock + delta });
       setProducts((current) => current?.map((p) => (p.id === id ? saved : p)) ?? null);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
@@ -65,7 +63,7 @@ export default function Admin() {
     setDeleting(true);
     setError(null);
     try {
-      await api<null>(`/api/products/${product.id}`, { method: 'DELETE' });
+      await deleteProduct(product.id);
       setProducts((current) => current?.filter((p) => p.id !== product.id) ?? null);
       show(`${product.name} deleted`, { id: `product-${product.id}-deleted` });
     } catch (e: unknown) {

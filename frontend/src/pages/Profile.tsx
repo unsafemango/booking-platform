@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
-import { api } from '../lib/api.ts';
+import { getMe } from '../api/auth.ts';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import type { Role, User } from '../types.ts';
 
@@ -15,7 +15,7 @@ export default function Profile() {
   useEffect(() => {
     let active = true;
     // A 401 here fires auth:expired, which logs out and sends the user to the login page.
-    api<User>('/api/users/me')
+    getMe()
       .then((data) => {
         if (active) setProfile(data);
       })
