@@ -25,13 +25,18 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 export interface ApiOptions {
   method?: HttpMethod;
   body?: unknown;
+  /** Aborting it cancels the request; the promise then rejects with an AbortError. */
+  signal?: AbortSignal;
 }
 
 /**
  * Every call goes to the gateway (same origin, proxied by Vite or nginx).
  * T is the expected response body; a 204 response resolves to null.
  */
-export async function api<T>(path: string, { method = 'GET', body }: ApiOptions = {}): Promise<T> {
+export async function api<T>(
+  path: string,
+  { method = 'GET', body, signal }: ApiOptions = {},
+): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' };
   const token = tokenStore.get();
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -41,6 +46,7 @@ export async function api<T>(path: string, { method = 'GET', body }: ApiOptions 
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
+    signal,
   });
   const data: unknown = res.status === 204 ? null : await res.json().catch(() => null);
 

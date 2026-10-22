@@ -8,4 +8,5 @@ export const register = (name: string, email: string, password: string): Promise
   api<AuthResponse>('/api/auth/register', { method: 'POST', body: { name, email, password } });
 
 /** The signed-in user's profile. */
-export const getMe = (): Promise<User> => api<User>('/api/users/me');
+export const getMe = (signal?: AbortSignal): Promise<User> =>
+  api<User>('/api/users/me', { signal });

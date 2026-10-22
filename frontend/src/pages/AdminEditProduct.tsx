@@ -24,22 +24,20 @@ export default function AdminEditProduct() {
   );
 
   useEffect(() => {
-    let active = true;
+    const controller = new AbortController();
     setProduct(null);
     setLoadError(null);
     setNotFound(false);
-    getProduct(id)
+    getProduct(id, controller.signal)
       .then((data) => {
-        if (active) setProduct(data);
+        if (!controller.signal.aborted) setProduct(data);
       })
       .catch((e: unknown) => {
-        if (!active) return;
+        if (controller.signal.aborted) return;
         if (e instanceof ApiError && e.status === 404) setNotFound(true);
         else setLoadError(e instanceof Error ? e.message : String(e));
       });
-    return () => {
-      active = false;
-    };
+    return () => controller.abort();
   }, [id]);
 
   async function save(input: ProductInput) {

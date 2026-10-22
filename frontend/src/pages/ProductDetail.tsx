@@ -17,22 +17,20 @@ export default function ProductDetail() {
   useDocumentTitle(product?.name ?? (notFound ? 'Listing not found' : null));
 
   useEffect(() => {
-    let active = true;
+    const controller = new AbortController();
     setProduct(null);
     setError(null);
     setNotFound(false);
-    getProduct(id)
+    getProduct(id, controller.signal)
       .then((data) => {
-        if (active) setProduct(data);
+        if (!controller.signal.aborted) setProduct(data);
       })
       .catch((e: unknown) => {
-        if (!active) return;
+        if (controller.signal.aborted) return;
         if (e instanceof ApiError && e.status === 404) setNotFound(true);
         else setError(e instanceof Error ? e.message : String(e));
       });
-    return () => {
-      active = false;
-    };
+    return () => controller.abort();
   }, [id]);
 
   const back = (

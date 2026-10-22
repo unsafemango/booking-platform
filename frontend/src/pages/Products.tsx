@@ -23,16 +23,28 @@ export default function Products() {
   useDocumentTitle();
 
   useEffect(() => {
+    // Aborting on each change also stops a slow older search from overwriting a newer one.
+    const controller = new AbortController();
     const timer = setTimeout(() => {
-      listProducts({ q: query, category: category === 'All' ? undefined : category })
+      listProducts(
+        { q: query, category: category === 'All' ? undefined : category },
+        controller.signal,
+      )
         .then((data) => {
           setProducts(data);
           setError(null);
+          setLoading(false);
         })
-        .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
-        .finally(() => setLoading(false));
+        .catch((e: unknown) => {
+          if (controller.signal.aborted) return;
+          setError(e instanceof Error ? e.message : String(e));
+          setLoading(false);
+        });
     }, 200);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [query, category]);
 
   const inCart = (id: string): number => cart.lines.find((l) => l.product.id === id)?.quantity ?? 0;

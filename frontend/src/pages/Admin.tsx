@@ -28,9 +28,13 @@ export default function Admin() {
   useDocumentTitle('Admin');
 
   useEffect(() => {
-    listProducts()
+    const controller = new AbortController();
+    listProducts({}, controller.signal)
       .then((list) => setProducts([...list].sort(byCategoryThenName)))
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+      .catch((e: unknown) => {
+        if (!controller.signal.aborted) setError(e instanceof Error ? e.message : String(e));
+      });
+    return () => controller.abort();
   }, []);
 
   const confirming = products?.find((p) => p.id === deletingId) ?? null;

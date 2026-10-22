@@ -32,6 +32,14 @@ describe('api', () => {
     expect(init?.body).toBeUndefined();
   });
 
+  it('passes the abort signal to fetch', async () => {
+    const fetchMock = mockFetch(200, []);
+    const controller = new AbortController();
+
+    await api('/api/products', { signal: controller.signal });
+    expect(fetchMock.mock.calls[0][1]?.signal).toBe(controller.signal);
+  });
+
   it('sends the token and a JSON body', async () => {
     tokenStore.set('abc');
     const fetchMock = mockFetch(201, { id: 'o1' });

@@ -26,25 +26,23 @@ export default function OrderDetail() {
   );
 
   useEffect(() => {
-    let active = true;
+    const controller = new AbortController();
     setOrder(null);
     setError(null);
     setActionError(null);
     setNotFound(false);
-    getOrder(id)
+    getOrder(id, controller.signal)
       .then((data) => {
-        if (active) setOrder(data);
+        if (!controller.signal.aborted) setOrder(data);
       })
       .catch((e: unknown) => {
-        if (!active) return;
+        if (controller.signal.aborted) return;
         // The order service answers 404 for unknown ids and for other users' orders,
         // and 400 for ids that aren't UUIDs.
         if (e instanceof ApiError && (e.status === 404 || e.status === 400)) setNotFound(true);
         else setError(e instanceof Error ? e.message : String(e));
       });
-    return () => {
-      active = false;
-    };
+    return () => controller.abort();
   }, [id]);
 
   const live = useOrderUpdates(

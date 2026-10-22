@@ -64,4 +64,14 @@ describe('Profile page', () => {
       "Couldn't load your profile: Service unavailable",
     );
   });
+
+  it('aborts the request when the page unmounts', () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockReturnValue(new Promise(() => {}));
+    const { unmount } = renderProfile();
+
+    const signal = fetchMock.mock.lastCall?.[1]?.signal;
+    expect(signal?.aborted).toBe(false);
+    unmount();
+    expect(signal?.aborted).toBe(true);
+  });
 });

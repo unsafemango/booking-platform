@@ -45,24 +45,28 @@ export default function Orders() {
     };
   }, []);
 
-  const loadNotifications = useCallback(() => {
-    listNotifications()
+  const loadNotifications = useCallback((signal?: AbortSignal) => {
+    listNotifications(signal)
       .then(setNotifications)
       .catch(() => {});
   }, []);
 
-  const loadOrders = useCallback(() => {
-    listOrders()
+  const loadOrders = useCallback((signal?: AbortSignal) => {
+    listOrders(signal)
       .then((data) => {
         setOrders(data);
         setError(null);
       })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+      .catch((e: unknown) => {
+        if (!signal?.aborted) setError(e instanceof Error ? e.message : String(e));
+      });
   }, []);
 
   useEffect(() => {
-    loadOrders();
-    loadNotifications();
+    const controller = new AbortController();
+    loadOrders(controller.signal);
+    loadNotifications(controller.signal);
+    return () => controller.abort();
   }, [loadOrders, loadNotifications]);
 
   const live = useOrderUpdates(

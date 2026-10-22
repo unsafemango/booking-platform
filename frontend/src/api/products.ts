@@ -9,15 +9,19 @@ export interface ProductFilters {
 const productPath = (id: string): string => `/api/products/${encodeURIComponent(id)}`;
 
 /** Empty filters are left out of the query string. */
-export function listProducts({ q, category }: ProductFilters = {}): Promise<Product[]> {
+export function listProducts(
+  { q, category }: ProductFilters = {},
+  signal?: AbortSignal,
+): Promise<Product[]> {
   const params = new URLSearchParams();
   if (q) params.set('q', q);
   if (category) params.set('category', category);
   const query = params.toString();
-  return api<Product[]>(query ? `/api/products?${query}` : '/api/products');
+  return api<Product[]>(query ? `/api/products?${query}` : '/api/products', { signal });
 }
 
-export const getProduct = (id: string): Promise<Product> => api<Product>(productPath(id));
+export const getProduct = (id: string, signal?: AbortSignal): Promise<Product> =>
+  api<Product>(productPath(id), { signal });
 
 /** Admin only. */
 export const createProduct = (input: ProductInput): Promise<Product> =>

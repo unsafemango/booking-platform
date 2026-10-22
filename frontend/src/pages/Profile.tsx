@@ -13,18 +13,16 @@ export default function Profile() {
   useDocumentTitle('Profile');
 
   useEffect(() => {
-    let active = true;
+    const controller = new AbortController();
     // A 401 here fires auth:expired, which logs out and sends the user to the login page.
-    getMe()
+    getMe(controller.signal)
       .then((data) => {
-        if (active) setProfile(data);
+        if (!controller.signal.aborted) setProfile(data);
       })
       .catch((e: unknown) => {
-        if (active) setError(e instanceof Error ? e.message : String(e));
+        if (!controller.signal.aborted) setError(e instanceof Error ? e.message : String(e));
       });
-    return () => {
-      active = false;
-    };
+    return () => controller.abort();
   }, []);
 
   if (error) return <Alert>Couldn't load your profile: {error}</Alert>;
