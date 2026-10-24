@@ -11,6 +11,7 @@ import { cancelOrder, listOrders } from '../api/orders.ts';
 import { money, orderRef } from '../lib/api.ts';
 import { useToast } from '../lib/toast.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
+import { useFetch } from '../lib/useFetch.ts';
 import { useOrderUpdates } from '../lib/useOrderUpdates.ts';
 import type { Notification, Order } from '../types.ts';
 
@@ -19,10 +20,15 @@ function isCancellable(order: Order) {
 }
 
 export default function Orders() {
-  const [orders, setOrders] = useState<Order[] | null>(null);
+  const {
+    data: orders,
+    error,
+    setData: setOrders,
+    reload: reloadOrders,
+  } = useFetch(listOrders, { keepPrevious: true });
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [flash, setFlash] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const { show } = useToast();
@@ -51,23 +57,11 @@ export default function Orders() {
       .catch(() => {});
   }, []);
 
-  const loadOrders = useCallback((signal?: AbortSignal) => {
-    listOrders(signal)
-      .then((data) => {
-        setOrders(data);
-        setError(null);
-      })
-      .catch((e: unknown) => {
-        if (!signal?.aborted) setError(e instanceof Error ? e.message : String(e));
-      });
-  }, []);
-
   useEffect(() => {
     const controller = new AbortController();
-    loadOrders(controller.signal);
     loadNotifications(controller.signal);
     return () => controller.abort();
-  }, [loadOrders, loadNotifications]);
+  }, [loadNotifications]);
 
   const live = useOrderUpdates(
     (event) => {
@@ -78,13 +72,10 @@ export default function Orders() {
           id: `order-${event.orderId}-${event.status}`,
         });
       }
-      setOrders(
-        (current) =>
-          current?.map((o) =>
-            o.id === event.orderId
-              ? { ...o, status: event.status, updatedAt: event.occurredAt }
-              : o,
-          ) ?? null,
+      setOrders((current) =>
+        current?.map((o) =>
+          o.id === event.orderId ? { ...o, status: event.status, updatedAt: event.occurredAt } : o,
+        ),
       );
       setFlash(event.orderId);
       later(() => setFlash((id) => (id === event.orderId ? null : id)), 1500);
@@ -93,7 +84,7 @@ export default function Orders() {
     },
     () => {
       // Status changes made while the connection was down never reach us; catch up.
-      loadOrders();
+      reloadOrders();
       loadNotifications();
     },
   );
@@ -103,12 +94,13 @@ export default function Orders() {
 
   async function cancel(id: string) {
     setCancelling(true);
+    setActionError(null);
     try {
       const updated = await cancelOrder(id);
-      setOrders((current) => current?.map((o) => (o.id === id ? updated : o)) ?? null);
+      setOrders((current) => current?.map((o) => (o.id === id ? updated : o)));
       show(`Booking ${orderRef(id)} cancelled`, { id: `order-${id}-${updated.status}` });
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
+      setActionError(e instanceof Error ? e.message : String(e));
     } finally {
       setCancelling(false);
       setConfirmingId(null);
@@ -124,7 +116,8 @@ export default function Orders() {
         </div>
         <OfflineBanner connected={live} />
         {error && <Alert>{error}</Alert>}
-        {orders === null && !error && <OrderListSkeleton />}
+        {actionError && <Alert>{actionError}</Alert>}
+        {orders === undefined && !error && <OrderListSkeleton />}
         {orders?.length === 0 && (
           <p className="muted">
             No bookings yet. <Link to="/">Find something to book.</Link>

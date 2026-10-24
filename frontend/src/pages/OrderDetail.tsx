@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
@@ -6,18 +6,20 @@ import ConfirmDialog from '../components/ConfirmDialog.tsx';
 import OfflineBanner from '../components/OfflineBanner.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
 import { cancelOrder, getOrder } from '../api/orders.ts';
-import { ApiError, money, orderRef } from '../lib/api.ts';
+import { money, orderRef } from '../lib/api.ts';
 import { useToast } from '../lib/toast.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
+import { useFetch } from '../lib/useFetch.ts';
 import { useOrderUpdates } from '../lib/useOrderUpdates.ts';
-import type { Order } from '../types.ts';
 
 export default function OrderDetail() {
   const { id = '' } = useParams();
-  const [order, setOrder] = useState<Order | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const load = useCallback((signal: AbortSignal) => getOrder(id, signal), [id]);
+  const { data: order, error, errorStatus, setData: setOrder } = useFetch(load);
+  // The order service answers 404 for unknown ids and for other users' orders,
+  // and 400 for ids that aren't UUIDs.
+  const notFound = errorStatus === 404 || errorStatus === 400;
   const [actionError, setActionError] = useState<string | null>(null);
-  const [notFound, setNotFound] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const { show } = useToast();
@@ -25,25 +27,7 @@ export default function OrderDetail() {
     order ? `Booking ${orderRef(order.id)}` : notFound ? 'Booking not found' : 'Booking',
   );
 
-  useEffect(() => {
-    const controller = new AbortController();
-    setOrder(null);
-    setError(null);
-    setActionError(null);
-    setNotFound(false);
-    getOrder(id, controller.signal)
-      .then((data) => {
-        if (!controller.signal.aborted) setOrder(data);
-      })
-      .catch((e: unknown) => {
-        if (controller.signal.aborted) return;
-        // The order service answers 404 for unknown ids and for other users' orders,
-        // and 400 for ids that aren't UUIDs.
-        if (e instanceof ApiError && (e.status === 404 || e.status === 400)) setNotFound(true);
-        else setError(e instanceof Error ? e.message : String(e));
-      });
-    return () => controller.abort();
-  }, [id]);
+  useEffect(() => setActionError(null), [id]);
 
   const live = useOrderUpdates(
     (event) => {
@@ -72,7 +56,7 @@ export default function OrderDetail() {
     setActionError(null);
     try {
       const updated = await cancelOrder(id);
-      setOrder(updated);
+      setOrder(() => updated);
       show(`Booking ${orderRef(id)} cancelled`, { id: `order-${id}-${updated.status}` });
     } catch (e: unknown) {
       setActionError(e instanceof Error ? e.message : String(e));

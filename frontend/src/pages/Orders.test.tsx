@@ -151,10 +151,8 @@ describe('Orders live updates', () => {
 
     expect(await screen.findByText('Your booking is confirmed')).toBeInTheDocument();
     expect(within(orderCard(loftOrder.id)).getByText('confirmed')).toHaveClass('badge-confirmed');
-    expect(fetchMock.mock.calls.slice(2).map((call) => String(call[0]))).toEqual([
-      '/api/orders',
-      '/api/notifications',
-    ]);
+    const refetched = fetchMock.mock.calls.slice(2).map((call) => String(call[0]));
+    expect(refetched.sort()).toEqual(['/api/notifications', '/api/orders']);
   });
 
   it('changes the status of the matching order in place', async () => {

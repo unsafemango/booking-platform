@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from './api.ts';
 
 export interface FetchState<T> {
@@ -8,6 +8,13 @@ export interface FetchState<T> {
   /** The HTTP status when the request failed with an ApiError, e.g. 404. */
   errorStatus: number | null;
   loading: boolean;
+}
+
+export interface FetchResult<T> extends FetchState<T> {
+  /** Replace the data in place, e.g. to apply a live update without refetching. */
+  setData: (update: (current: T | undefined) => T | undefined) => void;
+  /** Run the request again, honouring `keepPrevious`. */
+  reload: () => void;
 }
 
 export interface FetchOptions {
@@ -28,7 +35,8 @@ export interface FetchOptions {
 export function useFetch<T>(
   load: (signal: AbortSignal) => Promise<T>,
   { delay = 0, keepPrevious = false }: FetchOptions = {},
-): FetchState<T> {
+): FetchResult<T> {
+  const [nonce, setNonce] = useState(0);
   const [state, setState] = useState<FetchState<T>>({
     data: undefined,
     error: null,
@@ -65,7 +73,12 @@ export function useFetch<T>(
       clearTimeout(timer);
       controller.abort();
     };
-  }, [load, delay, keepPrevious]);
+  }, [load, delay, keepPrevious, nonce]);
 
-  return state;
+  const setData = useCallback((update: (current: T | undefined) => T | undefined) => {
+    setState((s) => ({ ...s, data: update(s.data) }));
+  }, []);
+  const reload = useCallback(() => setNonce((n) => n + 1), []);
+
+  return { ...state, setData, reload };
 }
