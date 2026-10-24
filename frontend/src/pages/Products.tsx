@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
@@ -8,44 +8,26 @@ import { listProducts } from '../api/products.ts';
 import { money } from '../lib/api.ts';
 import { useCart } from '../lib/cart.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
+import { useFetch } from '../lib/useFetch.ts';
 import type { Product } from '../types.ts';
 
 const CATEGORIES = ['All', 'Stays', 'Experiences', 'Events'] as const;
 type Category = (typeof CATEGORIES)[number];
 
 export default function Products() {
-  const [products, setProducts] = useState<Product[]>([]);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('All');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const cart = useCart();
   useDocumentTitle();
 
-  useEffect(() => {
-    // Aborting on each change also stops a slow older search from overwriting a newer one.
-    const controller = new AbortController();
-    const timer = setTimeout(() => {
-      listProducts(
-        { q: query, category: category === 'All' ? undefined : category },
-        controller.signal,
-      )
-        .then((data) => {
-          setProducts(data);
-          setError(null);
-          setLoading(false);
-        })
-        .catch((e: unknown) => {
-          if (controller.signal.aborted) return;
-          setError(e instanceof Error ? e.message : String(e));
-          setLoading(false);
-        });
-    }, 200);
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [query, category]);
+  const load = useCallback(
+    (signal: AbortSignal) =>
+      listProducts({ q: query, category: category === 'All' ? undefined : category }, signal),
+    [query, category],
+  );
+  // Debounced so typing in the search box doesn't send a request per keystroke.
+  const { data, error } = useFetch(load, { delay: 200 });
+  const products: Product[] = data ?? [];
 
   const inCart = (id: string): number => cart.lines.find((l) => l.product.id === id)?.quantity ?? 0;
 
@@ -77,8 +59,8 @@ export default function Products() {
       </section>
 
       {error && <Alert>Couldn't load the catalog: {error}</Alert>}
-      {loading && !error && <ProductGridSkeleton />}
-      {!loading && !error && products.length === 0 && (
+      {!data && !error && <ProductGridSkeleton />}
+      {data && !error && products.length === 0 && (
         <p className="muted">Nothing matches that search.</p>
       )}
 
