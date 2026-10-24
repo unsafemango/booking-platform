@@ -1,37 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import { getProduct } from '../api/products.ts';
-import { ApiError, money } from '../lib/api.ts';
+import { money } from '../lib/api.ts';
 import { useCart } from '../lib/cart.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
-import type { Product } from '../types.ts';
+import { useFetch } from '../lib/useFetch.ts';
 
 export default function ProductDetail() {
   const { id = '' } = useParams();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [notFound, setNotFound] = useState(false);
+  const load = useCallback((signal: AbortSignal) => getProduct(id, signal), [id]);
+  const { data: product, error, errorStatus } = useFetch(load);
+  const notFound = errorStatus === 404;
   const cart = useCart();
   useDocumentTitle(product?.name ?? (notFound ? 'Listing not found' : null));
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setProduct(null);
-    setError(null);
-    setNotFound(false);
-    getProduct(id, controller.signal)
-      .then((data) => {
-        if (!controller.signal.aborted) setProduct(data);
-      })
-      .catch((e: unknown) => {
-        if (controller.signal.aborted) return;
-        if (e instanceof ApiError && e.status === 404) setNotFound(true);
-        else setError(e instanceof Error ? e.message : String(e));
-      });
-    return () => controller.abort();
-  }, [id]);
 
   const back = (
     <Link to="/" className="back-link">

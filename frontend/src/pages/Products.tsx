@@ -26,7 +26,7 @@ export default function Products() {
     [query, category],
   );
   // Debounced so typing in the search box doesn't send a request per keystroke.
-  const { data, error } = useFetch(load, { delay: 200 });
+  const { data, error } = useFetch(load, { delay: 200, keepPrevious: true });
   const products: Product[] = data ?? [];
 
   const inCart = (id: string): number => cart.lines.find((l) => l.product.id === id)?.quantity ?? 0;

@@ -1,15 +1,23 @@
 import { useEffect, useState } from 'react';
+import { ApiError } from './api.ts';
 
 export interface FetchState<T> {
-  /** The last successful result; kept while a newer request is in flight or after it fails. */
+  /** The last successful result for the current request (see `keepPrevious`). */
   data: T | undefined;
   error: string | null;
+  /** The HTTP status when the request failed with an ApiError, e.g. 404. */
+  errorStatus: number | null;
   loading: boolean;
 }
 
 export interface FetchOptions {
   /** Wait this many ms before sending, e.g. to debounce a search box. */
   delay?: number;
+  /**
+   * Keep the previous data and error while a new request is in flight, instead of
+   * clearing them. Useful for search results; detail pages want a clean slate per id.
+   */
+  keepPrevious?: boolean;
 }
 
 /**
@@ -19,28 +27,34 @@ export interface FetchOptions {
  */
 export function useFetch<T>(
   load: (signal: AbortSignal) => Promise<T>,
-  { delay = 0 }: FetchOptions = {},
+  { delay = 0, keepPrevious = false }: FetchOptions = {},
 ): FetchState<T> {
   const [state, setState] = useState<FetchState<T>>({
     data: undefined,
     error: null,
+    errorStatus: null,
     loading: true,
   });
 
   useEffect(() => {
     const controller = new AbortController();
-    setState((s) => (s.loading ? s : { ...s, loading: true }));
+    setState((s) => {
+      if (keepPrevious) return s.loading ? s : { ...s, loading: true };
+      const fresh = s.loading && s.data === undefined && s.error === null;
+      return fresh ? s : { data: undefined, error: null, errorStatus: null, loading: true };
+    });
 
     const run = () => {
       load(controller.signal).then(
         (data) => {
           if (controller.signal.aborted) return;
-          setState({ data, error: null, loading: false });
+          setState({ data, error: null, errorStatus: null, loading: false });
         },
         (e: unknown) => {
           if (controller.signal.aborted) return;
           const error = e instanceof Error ? e.message : String(e);
-          setState((s) => ({ data: s.data, error, loading: false }));
+          const errorStatus = e instanceof ApiError ? e.status : null;
+          setState((s) => ({ data: s.data, error, errorStatus, loading: false }));
         },
       );
     };
@@ -51,7 +65,7 @@ export function useFetch<T>(
       clearTimeout(timer);
       controller.abort();
     };
-  }, [load, delay]);
+  }, [load, delay, keepPrevious]);
 
   return state;
 }

@@ -1,29 +1,16 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import { getMe } from '../api/auth.ts';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
-import type { Role, User } from '../types.ts';
+import { useFetch } from '../lib/useFetch.ts';
+import type { Role } from '../types.ts';
 
 const roleLabels: Record<Role, string> = { CUSTOMER: 'Customer', ADMIN: 'Administrator' };
 
 export default function Profile() {
-  const [profile, setProfile] = useState<User | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // A 401 here fires auth:expired, which logs out and sends the user to the login page.
+  const { data: profile, error } = useFetch(getMe);
   useDocumentTitle('Profile');
-
-  useEffect(() => {
-    const controller = new AbortController();
-    // A 401 here fires auth:expired, which logs out and sends the user to the login page.
-    getMe(controller.signal)
-      .then((data) => {
-        if (!controller.signal.aborted) setProfile(data);
-      })
-      .catch((e: unknown) => {
-        if (!controller.signal.aborted) setError(e instanceof Error ? e.message : String(e));
-      });
-    return () => controller.abort();
-  }, []);
 
   if (error) return <Alert>Couldn't load your profile: {error}</Alert>;
   if (!profile) {
