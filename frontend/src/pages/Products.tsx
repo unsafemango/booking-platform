@@ -26,7 +26,7 @@ export default function Products() {
     [query, category],
   );
   // Debounced so typing in the search box doesn't send a request per keystroke.
-  const { data, error } = useFetch(load, { delay: 200, keepPrevious: true });
+  const { data, error, reload } = useFetch(load, { delay: 200, keepPrevious: true });
   const products: Product[] = data ?? [];
 
   const inCart = (id: string): number => cart.lines.find((l) => l.product.id === id)?.quantity ?? 0;
@@ -58,7 +58,7 @@ export default function Products() {
         </div>
       </section>
 
-      {error && <Alert>Couldn't load the catalog: {error}</Alert>}
+      {error && <Alert onRetry={reload}>Couldn't load the catalog: {error}</Alert>}
       {!data && !error && <ProductGridSkeleton />}
       {data && !error && products.length === 0 && (
         <p className="muted">Nothing matches that search.</p>

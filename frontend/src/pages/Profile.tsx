@@ -9,10 +9,10 @@ const roleLabels: Record<Role, string> = { CUSTOMER: 'Customer', ADMIN: 'Adminis
 
 export default function Profile() {
   // A 401 here fires auth:expired, which logs out and sends the user to the login page.
-  const { data: profile, error } = useFetch(getMe);
+  const { data: profile, error, reload } = useFetch(getMe);
   useDocumentTitle('Profile');
 
-  if (error) return <Alert>Couldn't load your profile: {error}</Alert>;
+  if (error) return <Alert onRetry={reload}>Couldn't load your profile: {error}</Alert>;
   if (!profile) {
     return (
       <p role="status" className="muted">

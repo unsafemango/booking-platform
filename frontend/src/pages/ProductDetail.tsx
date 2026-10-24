@@ -11,7 +11,7 @@ import { useFetch } from '../lib/useFetch.ts';
 export default function ProductDetail() {
   const { id = '' } = useParams();
   const load = useCallback((signal: AbortSignal) => getProduct(id, signal), [id]);
-  const { data: product, error, errorStatus } = useFetch(load);
+  const { data: product, error, errorStatus, reload } = useFetch(load);
   const notFound = errorStatus === 404;
   const cart = useCart();
   useDocumentTitle(product?.name ?? (notFound ? 'Listing not found' : null));
@@ -37,7 +37,7 @@ export default function ProductDetail() {
     return (
       <>
         {back}
-        <Alert>Couldn't load this listing: {error}</Alert>
+        <Alert onRetry={reload}>Couldn't load this listing: {error}</Alert>
       </>
     );
   }

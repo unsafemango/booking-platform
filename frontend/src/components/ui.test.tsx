@@ -64,5 +64,15 @@ describe('Alert', () => {
 
     expect(screen.getByRole('alert')).toHaveTextContent('Something went wrong');
     expect(screen.getByRole('alert')).toHaveClass('alert');
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('offers a retry button outside the announced message', () => {
+    const onRetry = vi.fn();
+    render(<Alert onRetry={onRetry}>Couldn't load</Alert>);
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/^Couldn't load$/);
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });

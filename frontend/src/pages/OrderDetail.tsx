@@ -15,7 +15,7 @@ import { useOrderUpdates } from '../lib/useOrderUpdates.ts';
 export default function OrderDetail() {
   const { id = '' } = useParams();
   const load = useCallback((signal: AbortSignal) => getOrder(id, signal), [id]);
-  const { data: order, error, errorStatus, setData: setOrder } = useFetch(load);
+  const { data: order, error, errorStatus, setData: setOrder, reload } = useFetch(load);
   // The order service answers 404 for unknown ids and for other users' orders,
   // and 400 for ids that aren't UUIDs.
   const notFound = errorStatus === 404 || errorStatus === 400;
@@ -87,7 +87,7 @@ export default function OrderDetail() {
     return (
       <>
         {back}
-        <Alert>Couldn't load this booking: {error}</Alert>
+        <Alert onRetry={reload}>Couldn't load this booking: {error}</Alert>
       </>
     );
   }

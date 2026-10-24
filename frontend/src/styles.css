@@ -270,6 +270,16 @@ main.container {
   padding: 10px 12px;
   border-radius: 8px;
 }
+.alert-with-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+.alert-with-action p {
+  margin: 0;
+}
 .field-error {
   color: var(--danger);
   font-size: 0.85rem;

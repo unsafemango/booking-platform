@@ -115,7 +115,7 @@ export default function Orders() {
           <span className={`live ${live ? 'on' : ''}`}>{live ? 'Live' : 'Connecting…'}</span>
         </div>
         <OfflineBanner connected={live} />
-        {error && <Alert>{error}</Alert>}
+        {error && <Alert onRetry={reloadOrders}>{error}</Alert>}
         {actionError && <Alert>{actionError}</Alert>}
         {orders === undefined && !error && <OrderListSkeleton />}
         {orders?.length === 0 && (

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { tokenStore } from '../lib/api.ts';
@@ -63,6 +63,19 @@ describe('Profile page', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       "Couldn't load your profile: Service unavailable",
     );
+  });
+
+  it('loads again when retry is clicked after an error', async () => {
+    const fetchMock = mockFetch(500, { error: 'Service unavailable' });
+    renderProfile();
+    await screen.findByRole('alert');
+
+    fetchMock.mockResolvedValue(new Response(JSON.stringify(ada), { status: 200 }));
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('aborts the request when the page unmounts', () => {
