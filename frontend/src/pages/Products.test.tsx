@@ -166,6 +166,35 @@ describe('Products page', () => {
     expect(lastUrl(fetchMock).searchParams.has('category')).toBe(false);
   });
 
+  it('sorts by price and name on the client', async () => {
+    const fetchMock = mockCatalog(() => [kayak, loft]);
+    renderProducts('/?sort=price-desc');
+    await screen.findByRole('heading', { name: 'Kayak Tour' });
+    const names = () => screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+
+    expect(names()).toEqual(['Harbour Loft', 'Kayak Tour']);
+    expect(lastUrl(fetchMock).searchParams.has('sort')).toBe(false);
+
+    const select = screen.getByRole('combobox', { name: 'Sort by' });
+    fireEvent.change(select, { target: { value: 'price-asc' } });
+    expect(names()).toEqual(['Kayak Tour', 'Harbour Loft']);
+
+    fireEvent.change(select, { target: { value: 'name' } });
+    expect(names()).toEqual(['Harbour Loft', 'Kayak Tour']);
+  });
+
+  it('keeps the server order for an unknown sort', async () => {
+    mockCatalog(() => [kayak, loft]);
+    renderProducts('/?sort=nope');
+    await screen.findByRole('heading', { name: 'Kayak Tour' });
+
+    expect(screen.getByRole('combobox', { name: 'Sort by' })).toHaveValue('featured');
+    expect(screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
+      'Kayak Tour',
+      'Harbour Loft',
+    ]);
+  });
+
   it('adds to the cart and stops at the available stock', async () => {
     mockCatalog(() => [loft]);
     renderProducts();

@@ -356,6 +356,23 @@ main.container {
   display: grid;
   gap: 12px;
 }
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+.sort .input {
+  width: auto;
+}
 .admin-filters {
   margin-bottom: 16px;
 }

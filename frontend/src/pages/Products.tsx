@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
@@ -18,16 +18,39 @@ function toCategory(value: string | null): Category {
   return CATEGORIES.find((c) => c === value) ?? 'All';
 }
 
+const SORTS = {
+  featured: 'Featured',
+  name: 'Name (A–Z)',
+  'price-asc': 'Price: low to high',
+  'price-desc': 'Price: high to low',
+} as const;
+type Sort = keyof typeof SORTS;
+
+function toSort(value: string | null): Sort {
+  return value && value in SORTS ? (value as Sort) : 'featured';
+}
+
+/** Sorts a copy of the list; 'featured' keeps the order the server sent. */
+function sortProducts(products: Product[], sort: Sort): Product[] {
+  if (sort === 'featured') return products;
+  const sorted = [...products];
+  if (sort === 'name') sorted.sort((a, b) => a.name.localeCompare(b.name));
+  else if (sort === 'price-asc') sorted.sort((a, b) => a.price - b.price);
+  else sorted.sort((a, b) => b.price - a.price);
+  return sorted;
+}
+
 export default function Products() {
   // Filters live in the query string so a search can be shared, bookmarked or restored with Back.
   const [params, setParams] = useSearchParams();
   const query = params.get('q') ?? '';
   const category = toCategory(params.get('category'));
-  const setFilter = (key: 'q' | 'category', value: string) => {
+  const sort = toSort(params.get('sort'));
+  const setFilter = (key: 'q' | 'category' | 'sort', value: string) => {
     setParams(
       (prev) => {
         const next = new URLSearchParams(prev);
-        if (value && value !== 'All') next.set(key, value);
+        if (value && value !== 'All' && value !== 'featured') next.set(key, value);
         else next.delete(key);
         return next;
       },
@@ -45,7 +68,7 @@ export default function Products() {
   );
   // Debounced so typing in the search box doesn't send a request per keystroke.
   const { data, error, reload } = useFetch(load, { delay: 200, keepPrevious: true });
-  const products: Product[] = data ?? [];
+  const products = useMemo(() => sortProducts(data ?? [], sort), [data, sort]);
 
   const inCart = (id: string): number => cart.lines.find((l) => l.product.id === id)?.quantity ?? 0;
 
@@ -61,17 +84,33 @@ export default function Products() {
             value={query}
             onChange={(e) => setFilter('q', e.target.value)}
           />
-          <div className="chips">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c}
-                className={`chip ${c === category ? 'active' : ''}`}
-                aria-pressed={c === category}
-                onClick={() => setFilter('category', c)}
+          <div className="filter-row">
+            <div className="chips">
+              {CATEGORIES.map((c) => (
+                <button
+                  key={c}
+                  className={`chip ${c === category ? 'active' : ''}`}
+                  aria-pressed={c === category}
+                  onClick={() => setFilter('category', c)}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+            <label className="sort">
+              Sort by
+              <select
+                className="input"
+                value={sort}
+                onChange={(e) => setFilter('sort', e.target.value)}
               >
-                {c}
-              </button>
-            ))}
+                {Object.entries(SORTS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
         </div>
       </section>
