@@ -40,13 +40,26 @@ function sortProducts(products: Product[], sort: Sort): Product[] {
   return sorted;
 }
 
+/** Reads a price bound from the URL; blank, negative or non-numeric values mean "no limit". */
+function toPrice(value: string | null): number | null {
+  if (!value) return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+function inPriceRange(product: Product, min: number | null, max: number | null): boolean {
+  return (min === null || product.price >= min) && (max === null || product.price <= max);
+}
+
 export default function Products() {
   // Filters live in the query string so a search can be shared, bookmarked or restored with Back.
   const [params, setParams] = useSearchParams();
   const query = params.get('q') ?? '';
   const category = toCategory(params.get('category'));
   const sort = toSort(params.get('sort'));
-  const setFilter = (key: 'q' | 'category' | 'sort', value: string) => {
+  const minPrice = toPrice(params.get('min'));
+  const maxPrice = toPrice(params.get('max'));
+  const setFilter = (key: 'q' | 'category' | 'sort' | 'min' | 'max', value: string) => {
     setParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -55,7 +68,7 @@ export default function Products() {
         return next;
       },
       // Typing replaces the entry so Back doesn't step through every keystroke.
-      { replace: key === 'q' },
+      { replace: key === 'q' || key === 'min' || key === 'max' },
     );
   };
   const cart = useCart();
@@ -68,7 +81,15 @@ export default function Products() {
   );
   // Debounced so typing in the search box doesn't send a request per keystroke.
   const { data, error, reload } = useFetch(load, { delay: 200, keepPrevious: true });
-  const products = useMemo(() => sortProducts(data ?? [], sort), [data, sort]);
+  // The API has no price filter, so the range is applied to the loaded list.
+  const products = useMemo(
+    () =>
+      sortProducts(
+        (data ?? []).filter((p) => inPriceRange(p, minPrice, maxPrice)),
+        sort,
+      ),
+    [data, sort, minPrice, maxPrice],
+  );
 
   const inCart = (id: string): number => cart.lines.find((l) => l.product.id === id)?.quantity ?? 0;
 
@@ -96,6 +117,29 @@ export default function Products() {
                   {c}
                 </button>
               ))}
+            </div>
+            <div className="price-range" role="group" aria-label="Price range">
+              <Input
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="any"
+                aria-label="Minimum price"
+                placeholder="Min $"
+                value={params.get('min') ?? ''}
+                onChange={(e) => setFilter('min', e.target.value)}
+              />
+              <span aria-hidden="true">–</span>
+              <Input
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="any"
+                aria-label="Maximum price"
+                placeholder="Max $"
+                value={params.get('max') ?? ''}
+                onChange={(e) => setFilter('max', e.target.value)}
+              />
             </div>
             <label className="sort">
               Sort by

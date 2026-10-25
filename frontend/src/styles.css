@@ -373,6 +373,14 @@ main.container {
 .sort .input {
   width: auto;
 }
+.price-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.price-range .input {
+  width: 6.5rem;
+}
 .admin-filters {
   margin-bottom: 16px;
 }

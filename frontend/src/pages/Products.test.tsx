@@ -195,6 +195,39 @@ describe('Products page', () => {
     ]);
   });
 
+  it('filters by price range on the client', async () => {
+    const fetchMock = mockCatalog(() => [kayak, loft]);
+    renderProducts('/?min=100');
+    await screen.findByRole('heading', { name: 'Harbour Loft' });
+    const names = () => screen.queryAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+
+    expect(names()).toEqual(['Harbour Loft']);
+    expect(screen.getByRole('spinbutton', { name: 'Minimum price' })).toHaveValue(100);
+    expect(lastUrl(fetchMock).searchParams.has('min')).toBe(false);
+
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Minimum price' }), {
+      target: { value: '' },
+    });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Maximum price' }), {
+      target: { value: '55.5' },
+    });
+    expect(names()).toEqual(['Kayak Tour']);
+
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Maximum price' }), {
+      target: { value: '10' },
+    });
+    expect(names()).toEqual([]);
+    expect(screen.getByText('Nothing matches that search.')).toBeInTheDocument();
+  });
+
+  it('ignores an invalid price bound in the URL', async () => {
+    mockCatalog(() => [kayak, loft]);
+    renderProducts('/?max=-5');
+    await screen.findByRole('heading', { name: 'Kayak Tour' });
+
+    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(2);
+  });
+
   it('adds to the cart and stops at the available stock', async () => {
     mockCatalog(() => [loft]);
     renderProducts();
