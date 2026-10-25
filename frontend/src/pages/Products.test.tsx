@@ -38,9 +38,9 @@ function lastUrl(fetchMock: ReturnType<typeof mockCatalog>): URL {
   return new URL(String(fetchMock.mock.lastCall?.[0]), 'http://localhost');
 }
 
-function renderProducts() {
+function renderProducts(path = '/') {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <CartProvider>
         <Products />
       </CartProvider>
@@ -144,6 +144,26 @@ describe('Products page', () => {
     expect(await screen.findByRole('heading', { name: 'Kayak Tour' })).toBeInTheDocument();
     expect(lastUrl(fetchMock).searchParams.has('category')).toBe(false);
     expect(stays).not.toHaveClass('active');
+  });
+
+  it('starts from the filters in the URL', async () => {
+    const fetchMock = mockCatalog(() => [loft]);
+    renderProducts('/?q=loft&category=Stays');
+    await screen.findByRole('heading', { name: 'Harbour Loft' });
+
+    expect(screen.getByRole('searchbox', { name: 'Search the catalog' })).toHaveValue('loft');
+    expect(screen.getByRole('button', { name: 'Stays' })).toHaveAttribute('aria-pressed', 'true');
+    expect(lastUrl(fetchMock).searchParams.get('q')).toBe('loft');
+    expect(lastUrl(fetchMock).searchParams.get('category')).toBe('Stays');
+  });
+
+  it('ignores an unknown category in the URL', async () => {
+    const fetchMock = mockCatalog(() => [loft, kayak]);
+    renderProducts('/?category=Nope');
+    await screen.findByRole('heading', { name: 'Kayak Tour' });
+
+    expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
+    expect(lastUrl(fetchMock).searchParams.has('category')).toBe(false);
   });
 
   it('adds to the cart and stops at the available stock', async () => {

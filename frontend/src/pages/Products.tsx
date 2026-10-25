@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import Input from '../components/Input.tsx';
@@ -14,9 +14,27 @@ import type { Product } from '../types.ts';
 const CATEGORIES = ['All', 'Stays', 'Experiences', 'Events'] as const;
 type Category = (typeof CATEGORIES)[number];
 
+function toCategory(value: string | null): Category {
+  return CATEGORIES.find((c) => c === value) ?? 'All';
+}
+
 export default function Products() {
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<Category>('All');
+  // Filters live in the query string so a search can be shared, bookmarked or restored with Back.
+  const [params, setParams] = useSearchParams();
+  const query = params.get('q') ?? '';
+  const category = toCategory(params.get('category'));
+  const setFilter = (key: 'q' | 'category', value: string) => {
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (value && value !== 'All') next.set(key, value);
+        else next.delete(key);
+        return next;
+      },
+      // Typing replaces the entry so Back doesn't step through every keystroke.
+      { replace: key === 'q' },
+    );
+  };
   const cart = useCart();
   useDocumentTitle();
 
@@ -41,7 +59,7 @@ export default function Products() {
             aria-label="Search the catalog"
             placeholder="Search stays, tours, events…"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => setFilter('q', e.target.value)}
           />
           <div className="chips">
             {CATEGORIES.map((c) => (
@@ -49,7 +67,7 @@ export default function Products() {
                 key={c}
                 className={`chip ${c === category ? 'active' : ''}`}
                 aria-pressed={c === category}
-                onClick={() => setCategory(c)}
+                onClick={() => setFilter('category', c)}
               >
                 {c}
               </button>
