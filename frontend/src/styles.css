@@ -468,6 +468,12 @@ main.container {
   justify-content: space-between;
   gap: 12px;
 }
+/* Search matches in product names. */
+.product mark {
+  background: var(--flash);
+  color: inherit;
+  border-radius: 3px;
+}
 .eyebrow {
   font-size: 0.75rem;
   text-transform: uppercase;

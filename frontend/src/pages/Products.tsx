@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
+import Highlight from '../components/Highlight.tsx';
 import Input from '../components/Input.tsx';
 import ProductImage from '../components/ProductImage.tsx';
 import { ProductGridSkeleton } from '../components/Skeleton.tsx';
@@ -214,7 +215,9 @@ export default function Products() {
               <div className="product-body">
                 <span className="eyebrow">{p.category}</span>
                 <h3>
-                  <Link to={`/products/${p.id}`}>{p.name}</Link>
+                  <Link to={`/products/${p.id}`}>
+                    <Highlight text={p.name} query={query} />
+                  </Link>
                 </h3>
                 <p className="muted">{p.description}</p>
                 <div className="product-foot">
