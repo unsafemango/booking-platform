@@ -93,8 +93,8 @@ describe('Products page', () => {
   });
 
   it('shows the error when the catalog fails to load', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ error: 'Service unavailable' }), { status: 503 }),
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () => new Response(JSON.stringify({ error: 'Service unavailable' }), { status: 503 }),
     );
     renderProducts();
 
@@ -164,6 +164,33 @@ describe('Products page', () => {
 
     expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
     expect(lastUrl(fetchMock).searchParams.has('category')).toBe(false);
+  });
+
+  it('builds the category chips from the catalog', async () => {
+    const pottery: Product = { ...loft, id: 'p3', name: 'Pottery Class', category: 'Workshops' };
+    mockCatalog(() => [loft, kayak, pottery]);
+    renderProducts();
+    await screen.findByRole('heading', { name: 'Pottery Class' });
+
+    const chipRow = screen.getByRole('button', { name: 'All' }).parentElement as HTMLElement;
+    const chips = within(chipRow)
+      .getAllByRole('button')
+      .map((b) => b.textContent);
+    expect(chips).toEqual(['All', 'Experiences', 'Stays', 'Workshops']);
+    expect(screen.queryByRole('button', { name: 'Events' })).not.toBeInTheDocument();
+  });
+
+  it('keeps every category chip when the URL starts on one category', async () => {
+    mockCatalog((url) => {
+      const category = url.searchParams.get('category');
+      return [loft, kayak].filter((p) => !category || p.category === category);
+    });
+    renderProducts('/?category=Stays');
+
+    expect(await screen.findByRole('button', { name: 'Experiences' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Stays' })).toHaveAttribute('aria-pressed', 'true');
+    expect(await screen.findByRole('heading', { name: 'Harbour Loft' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Kayak Tour' })).not.toBeInTheDocument();
   });
 
   it('sorts by price and name on the client', async () => {

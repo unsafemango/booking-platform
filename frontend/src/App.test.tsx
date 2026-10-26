@@ -95,8 +95,9 @@ describe('unknown routes', () => {
   });
 
   it('link back to the catalog', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify([loft]), { status: 200 }),
+    // The browse page makes two requests, so each needs its own Response.
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () => new Response(JSON.stringify([loft]), { status: 200 }),
     );
     renderAt('/missing');
 

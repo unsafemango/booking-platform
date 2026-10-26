@@ -11,11 +11,16 @@ import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import { useFetch } from '../lib/useFetch.ts';
 import type { Product } from '../types.ts';
 
-const CATEGORIES = ['All', 'Stays', 'Experiences', 'Events'] as const;
-type Category = (typeof CATEGORIES)[number];
+const ALL = 'All';
 
-function toCategory(value: string | null): Category {
-  return CATEGORIES.find((c) => c === value) ?? 'All';
+/** The full, unfiltered catalog, loaded once to know which categories exist. */
+const loadCatalog = (signal: AbortSignal) => listProducts({}, signal);
+
+/** Distinct categories in alphabetical order. */
+function categoriesOf(products: Product[]): string[] {
+  return [...new Set(products.map((p) => p.category).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b),
+  );
 }
 
 const SORTS = {
@@ -55,7 +60,13 @@ export default function Products() {
   // Filters live in the query string so a search can be shared, bookmarked or restored with Back.
   const [params, setParams] = useSearchParams();
   const query = params.get('q') ?? '';
-  const category = toCategory(params.get('category'));
+  // Chips come from the catalog itself, so new categories show up without a code change.
+  const { data: catalog } = useFetch(loadCatalog);
+  const known = useMemo(() => (catalog ? categoriesOf(catalog) : null), [catalog]);
+  const requested = params.get('category');
+  // Until the catalog arrives, trust the URL; after that an unknown category means All.
+  const category = requested && (!known || known.includes(requested)) ? requested : ALL;
+  const chips = [ALL, ...(known ?? []), ...(!known && category !== ALL ? [category] : [])];
   const sort = toSort(params.get('sort'));
   const minPrice = toPrice(params.get('min'));
   const maxPrice = toPrice(params.get('max'));
@@ -63,7 +74,7 @@ export default function Products() {
     setParams(
       (prev) => {
         const next = new URLSearchParams(prev);
-        if (value && value !== 'All' && value !== 'featured') next.set(key, value);
+        if (value && value !== ALL && value !== 'featured') next.set(key, value);
         else next.delete(key);
         return next;
       },
@@ -76,7 +87,7 @@ export default function Products() {
 
   const load = useCallback(
     (signal: AbortSignal) =>
-      listProducts({ q: query, category: category === 'All' ? undefined : category }, signal),
+      listProducts({ q: query, category: category === ALL ? undefined : category }, signal),
     [query, category],
   );
   // Debounced so typing in the search box doesn't send a request per keystroke.
@@ -107,7 +118,7 @@ export default function Products() {
           />
           <div className="filter-row">
             <div className="chips">
-              {CATEGORIES.map((c) => (
+              {chips.map((c) => (
                 <button
                   key={c}
                   className={`chip ${c === category ? 'active' : ''}`}
