@@ -84,7 +84,8 @@ export default function Products() {
   const sort = toSort(params.get('sort'));
   const minPrice = toPrice(params.get('min'));
   const maxPrice = toPrice(params.get('max'));
-  const setFilter = (key: 'q' | 'category' | 'sort' | 'min' | 'max', value: string) => {
+  const favouritesOnly = params.get('fav') === '1';
+  const setFilter = (key: 'q' | 'category' | 'sort' | 'min' | 'max' | 'fav', value: string) => {
     setParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -121,14 +122,17 @@ export default function Products() {
   );
   // Debounced so typing in the search box doesn't send a request per keystroke.
   const { data, error, reload } = useFetch(load, { delay: 200, keepPrevious: true });
-  // The API has no price filter, so the range is applied to the loaded list.
+  // The API has no price or favourites filter, so both are applied to the loaded list.
   const products = useMemo(
     () =>
       sortProducts(
-        (data ?? []).filter((p) => inPriceRange(p, minPrice, maxPrice)),
+        (data ?? []).filter(
+          (p) =>
+            inPriceRange(p, minPrice, maxPrice) && (!favouritesOnly || favourites.includes(p.id)),
+        ),
         sort,
       ),
-    [data, sort, minPrice, maxPrice],
+    [data, sort, minPrice, maxPrice, favouritesOnly, favourites],
   );
 
   const inCart = (id: string): number => cart.lines.find((l) => l.product.id === id)?.quantity ?? 0;
@@ -161,6 +165,14 @@ export default function Products() {
                 </button>
               ))}
             </div>
+            <button
+              type="button"
+              className={`chip ${favouritesOnly ? 'active' : ''}`}
+              aria-pressed={favouritesOnly}
+              onClick={() => setFilter('fav', favouritesOnly ? '' : '1')}
+            >
+              <span aria-hidden="true">♥ </span>Favourites only
+            </button>
             <div className="price-range" role="group" aria-label="Price range">
               <Input
                 type="number"
@@ -205,7 +217,11 @@ export default function Products() {
       {error && <Alert onRetry={reload}>Couldn't load the catalog: {error}</Alert>}
       {!data && !error && <ProductGridSkeleton />}
       {data && !error && products.length === 0 && (
-        <p className="muted">Nothing matches that search.</p>
+        <p className="muted">
+          {favouritesOnly && favourites.length === 0
+            ? 'No favourites yet. Tap the heart on a card to save it here.'
+            : 'Nothing matches that search.'}
+        </p>
       )}
 
       <div className="grid">

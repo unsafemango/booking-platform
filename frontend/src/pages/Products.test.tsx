@@ -323,4 +323,38 @@ describe('Products page', () => {
       within(card('Kayak Tour')).getByRole('button', { name: 'Favourite Kayak Tour' }),
     ).toHaveAttribute('aria-pressed', 'false');
   });
+
+  it('shows only favourites when the filter is on and keeps it in the URL', async () => {
+    localStorage.setItem('booking.favourites', JSON.stringify(['p2']));
+    mockCatalog(() => [loft, kayak]);
+    renderProducts();
+    await screen.findByRole('heading', { name: 'Harbour Loft' });
+
+    const filter = screen.getByRole('button', { name: 'Favourites only' });
+    fireEvent.click(filter);
+    expect(filter).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('heading', { name: 'Harbour Loft' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Kayak Tour' })).toBeInTheDocument();
+
+    fireEvent.click(
+      within(card('Kayak Tour')).getByRole('button', { name: 'Favourite Kayak Tour' }),
+    );
+    expect(screen.getByText(/No favourites yet/)).toBeInTheDocument();
+
+    fireEvent.click(filter);
+    expect(filter).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('heading', { name: 'Harbour Loft' })).toBeInTheDocument();
+  });
+
+  it('starts with the favourites filter from the URL', async () => {
+    localStorage.setItem('booking.favourites', JSON.stringify(['p1']));
+    mockCatalog(() => [loft, kayak]);
+    renderProducts('/?fav=1');
+    await screen.findByRole('heading', { name: 'Harbour Loft' });
+    expect(screen.getByRole('button', { name: 'Favourites only' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.queryByRole('heading', { name: 'Kayak Tour' })).not.toBeInTheDocument();
+  });
 });
