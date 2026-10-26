@@ -300,4 +300,27 @@ describe('Products page', () => {
     expect(fireEvent.keyDown(document.body, { key: '/', ctrlKey: true })).toBe(true);
     expect(search).not.toHaveFocus();
   });
+  it('toggles a favourite on a card and remembers it in this browser', async () => {
+    mockCatalog(() => [loft, kayak]);
+    const { unmount } = renderProducts();
+    await screen.findByRole('heading', { name: 'Harbour Loft' });
+
+    const heart = within(card('Harbour Loft')).getByRole('button', {
+      name: 'Favourite Harbour Loft',
+    });
+    expect(heart).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(heart);
+    expect(heart).toHaveAttribute('aria-pressed', 'true');
+    expect(JSON.parse(localStorage.getItem('booking.favourites') ?? '[]')).toEqual(['p1']);
+
+    unmount();
+    renderProducts();
+    await screen.findByRole('heading', { name: 'Harbour Loft' });
+    expect(
+      within(card('Harbour Loft')).getByRole('button', { name: 'Favourite Harbour Loft' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(
+      within(card('Kayak Tour')).getByRole('button', { name: 'Favourite Kayak Tour' }),
+    ).toHaveAttribute('aria-pressed', 'false');
+  });
 });

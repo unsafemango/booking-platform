@@ -474,6 +474,26 @@ main.container {
   color: inherit;
   border-radius: 3px;
 }
+.product-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.favourite {
+  border: none;
+  background: none;
+  padding: 2px 4px;
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 6px;
+}
+.favourite:hover,
+.favourite.active {
+  color: var(--danger);
+}
 .eyebrow {
   font-size: 0.75rem;
   text-transform: uppercase;
