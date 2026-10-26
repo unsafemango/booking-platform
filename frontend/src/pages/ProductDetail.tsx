@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
@@ -6,6 +6,7 @@ import ProductImage from '../components/ProductImage.tsx';
 import { getProduct } from '../api/products.ts';
 import { money } from '../lib/api.ts';
 import { useCart } from '../lib/cart.tsx';
+import { loadRecentlyViewed, recordView } from '../lib/recentlyViewed.ts';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import { useFetch } from '../lib/useFetch.ts';
 
@@ -16,6 +17,11 @@ export default function ProductDetail() {
   const notFound = errorStatus === 404;
   const cart = useCart();
   useDocumentTitle(product?.name ?? (notFound ? 'Listing not found' : null));
+  const [recent, setRecent] = useState(loadRecentlyViewed);
+
+  useEffect(() => {
+    if (product) setRecent(recordView(product));
+  }, [product]);
 
   const back = (
     <Link to="/" className="back-link">
@@ -55,6 +61,7 @@ export default function ProductDetail() {
 
   const inCart = cart.lines.find((l) => l.product.id === product.id)?.quantity ?? 0;
   const remaining = product.stock - inCart;
+  const others = recent.filter((p) => p.id !== product.id).slice(0, 4);
 
   return (
     <>
@@ -78,6 +85,21 @@ export default function ProductDetail() {
           </div>
         </div>
       </article>
+      {others.length > 0 && (
+        <section className="recently-viewed" aria-labelledby="recently-viewed-heading">
+          <h2 id="recently-viewed-heading">Recently viewed</h2>
+          <ul>
+            {others.map((p) => (
+              <li key={p.id}>
+                <Link to={`/products/${p.id}`}>{p.name}</Link>
+                <span className="muted">
+                  {p.category} · {money(p.price)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </>
   );
 }

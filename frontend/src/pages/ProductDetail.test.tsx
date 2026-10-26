@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { CartProvider } from '../lib/cart.tsx';
@@ -85,5 +85,37 @@ describe('Product detail page', () => {
     expect(
       await screen.findByText("Couldn't load this listing: Service unavailable"),
     ).toBeInTheDocument();
+  });
+
+  it('lists other recently viewed products, but not the current one', async () => {
+    localStorage.setItem(
+      'booking.recentlyViewed',
+      JSON.stringify([
+        { id: 'p1', name: 'Harbour Loft', category: 'Stays', price: 240 },
+        { id: 'p2', name: 'City Bike Tour', category: 'Tours', price: 45 },
+      ]),
+    );
+    mockFetch(200, loft);
+    renderDetail();
+    await screen.findByRole('heading', { name: 'Harbour Loft' });
+
+    const section = screen.getByRole('region', { name: 'Recently viewed' });
+    expect(within(section).getAllByRole('link')).toHaveLength(1);
+    expect(within(section).getByRole('link', { name: 'City Bike Tour' })).toHaveAttribute(
+      'href',
+      '/products/p2',
+    );
+    expect(within(section).getByText('Tours · $45.00')).toBeInTheDocument();
+  });
+
+  it('records the viewed product and hides the section on a first visit', async () => {
+    mockFetch(200, loft);
+    renderDetail();
+    await screen.findByRole('heading', { name: 'Harbour Loft' });
+
+    expect(screen.queryByRole('region', { name: 'Recently viewed' })).not.toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('booking.recentlyViewed') ?? 'null')).toEqual([
+      { id: 'p1', name: 'Harbour Loft', category: 'Stays', price: 240 },
+    ]);
   });
 });
