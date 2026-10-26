@@ -1,8 +1,9 @@
-import { useId, type InputHTMLAttributes, type ReactNode } from 'react';
+import { useId, type InputHTMLAttributes, type ReactNode, type Ref } from 'react';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: ReactNode;
   error?: string;
+  ref?: Ref<HTMLInputElement>;
 }
 
 export default function Input({ label, error, className, id, ...props }: InputProps) {

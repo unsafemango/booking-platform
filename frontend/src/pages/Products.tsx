@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
@@ -53,6 +53,17 @@ function toPrice(value: string | null): number | null {
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
+/** True when a key press is meant for a field the user is typing in. */
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return (
+    target.isContentEditable ||
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
+  );
+}
+
 function inPriceRange(product: Product, min: number | null, max: number | null): boolean {
   return (min === null || product.price >= min) && (max === null || product.price <= max);
 }
@@ -86,6 +97,20 @@ export default function Products() {
   const cart = useCart();
   useDocumentTitle();
 
+  // "/" jumps to the search box, as on many sites, unless the user is already typing somewhere.
+  const searchRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+      if (e.isComposing || isTypingTarget(e.target)) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+      searchRef.current?.select();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   const load = useCallback(
     (signal: AbortSignal) =>
       listProducts({ q: query, category: category === ALL ? undefined : category }, signal),
@@ -111,8 +136,11 @@ export default function Products() {
         <h1>Find something to book</h1>
         <div className="filters">
           <Input
+            ref={searchRef}
             type="search"
             aria-label="Search the catalog"
+            aria-keyshortcuts="/"
+            title="Press / to search"
             placeholder="Search stays, tours, events…"
             value={query}
             onChange={(e) => setFilter('q', e.target.value)}

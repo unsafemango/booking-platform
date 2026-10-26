@@ -271,4 +271,33 @@ describe('Products page', () => {
       { product: loft, quantity: 2 },
     ]);
   });
+
+  it('focuses the search box when "/" is pressed', async () => {
+    mockCatalog(() => [loft]);
+    renderProducts('/?q=loft');
+    await screen.findByRole('heading', { name: 'Harbour Loft' });
+    const search = screen.getByRole('searchbox', { name: 'Search the catalog' });
+    expect(search).not.toHaveFocus();
+
+    const pressed = fireEvent.keyDown(document.body, { key: '/' });
+    expect(pressed).toBe(false);
+    expect(search).toHaveFocus();
+    expect(search).toHaveAttribute('aria-keyshortcuts', '/');
+  });
+
+  it('leaves "/" alone while typing in another field or with a modifier', async () => {
+    mockCatalog(() => [loft]);
+    renderProducts();
+    await screen.findByRole('heading', { name: 'Harbour Loft' });
+    const search = screen.getByRole('searchbox', { name: 'Search the catalog' });
+    const min = screen.getByRole('spinbutton', { name: 'Minimum price' });
+
+    min.focus();
+    expect(fireEvent.keyDown(min, { key: '/' })).toBe(true);
+    expect(min).toHaveFocus();
+
+    min.blur();
+    expect(fireEvent.keyDown(document.body, { key: '/', ctrlKey: true })).toBe(true);
+    expect(search).not.toHaveFocus();
+  });
 });
