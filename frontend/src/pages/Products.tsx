@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import Input from '../components/Input.tsx';
+import ProductImage from '../components/ProductImage.tsx';
 import { ProductGridSkeleton } from '../components/Skeleton.tsx';
 import { listProducts } from '../api/products.ts';
 import { money } from '../lib/api.ts';
@@ -181,7 +182,7 @@ export default function Products() {
           const remaining = p.stock - inCart(p.id);
           return (
             <article key={p.id} className="card product">
-              {p.imageUrl && <img src={p.imageUrl} alt="" loading="lazy" />}
+              {p.imageUrl && <ProductImage src={p.imageUrl} lazy />}
               <div className="product-body">
                 <span className="eyebrow">{p.category}</span>
                 <h3>

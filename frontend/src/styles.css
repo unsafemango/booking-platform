@@ -445,7 +445,8 @@ main.container {
   display: flex;
   flex-direction: column;
 }
-.product img {
+.product img,
+.product-image-fallback {
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;

@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
+import ProductImage from '../components/ProductImage.tsx';
 import { getProduct } from '../api/products.ts';
 import { money } from '../lib/api.ts';
 import { useCart } from '../lib/cart.tsx';
@@ -59,7 +60,7 @@ export default function ProductDetail() {
     <>
       {back}
       <article className="card product product-detail">
-        {product.imageUrl && <img src={product.imageUrl} alt="" />}
+        {product.imageUrl && <ProductImage src={product.imageUrl} />}
         <div className="product-body">
           <span className="eyebrow">{product.category}</span>
           <h1>{product.name}</h1>
