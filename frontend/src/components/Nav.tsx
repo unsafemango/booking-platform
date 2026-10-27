@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import Button from './Button.tsx';
+import CartSummary from './CartSummary.tsx';
 import ThemeToggle from './ThemeToggle.tsx';
 import { useAuth } from '../lib/auth.tsx';
 import { useCart } from '../lib/cart.tsx';
@@ -19,7 +20,10 @@ export default function Nav() {
           <NavLink to="/" end>
             Browse
           </NavLink>
-          <NavLink to="/cart">Cart{count > 0 && <span className="pill">{count}</span>}</NavLink>
+          <span className="nav-cart">
+            <NavLink to="/cart">Cart{count > 0 && <span className="pill">{count}</span>}</NavLink>
+            <CartSummary />
+          </span>
           {user && <NavLink to="/orders">My bookings</NavLink>}
           {user && <NavLink to="/profile">Profile</NavLink>}
           {user?.role === 'ADMIN' && <NavLink to="/admin">Admin</NavLink>}

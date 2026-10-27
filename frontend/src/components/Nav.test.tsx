@@ -1,7 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
-import { tokenStore } from '../lib/api.ts';
+import { money, tokenStore } from '../lib/api.ts';
 import { AuthProvider } from '../lib/auth.tsx';
 import { CartProvider, type CartLine } from '../lib/cart.tsx';
 import type { Product, User } from '../types.ts';
@@ -88,6 +88,64 @@ describe('Nav', () => {
 
     const cart = screen.getByRole('link', { name: 'Cart' });
     expect(cart.querySelector('.pill')).toBeNull();
+  });
+
+  it('opens a cart summary with each line and the total', () => {
+    seedCart([
+      { product: loft, quantity: 2 },
+      { product: kayak, quantity: 1 },
+    ]);
+    renderNav();
+
+    const toggle = screen.getByRole('button', { name: 'Cart summary' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    const panel = screen.getByRole('region', { name: 'Cart summary' });
+    const items = within(panel).getAllByRole('listitem');
+    expect(items).toHaveLength(2);
+    expect(items[0]).toHaveTextContent('Harbour Loft × 2');
+    expect(items[1]).toHaveTextContent('Kayak Tour × 1');
+    expect(within(panel).getByText('Total').parentElement).toHaveTextContent(money(535));
+  });
+
+  it('says so when the cart is empty', () => {
+    renderNav();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cart summary' }));
+
+    expect(screen.getByText('Your cart is empty.')).toBeInTheDocument();
+  });
+
+  it('closes the summary on Escape and returns focus to the toggle', () => {
+    renderNav();
+    const toggle = screen.getByRole('button', { name: 'Cart summary' });
+    fireEvent.click(toggle);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(screen.queryByRole('region', { name: 'Cart summary' })).not.toBeInTheDocument();
+    expect(toggle).toHaveFocus();
+  });
+
+  it('closes the summary on a click outside it', () => {
+    renderNav();
+    fireEvent.click(screen.getByRole('button', { name: 'Cart summary' }));
+
+    fireEvent.pointerDown(screen.getByTestId('location'));
+
+    expect(screen.queryByRole('region', { name: 'Cart summary' })).not.toBeInTheDocument();
+  });
+
+  it('goes to the cart and closes the summary from "View cart"', () => {
+    renderNav('/');
+    fireEvent.click(screen.getByRole('button', { name: 'Cart summary' }));
+
+    fireEvent.click(screen.getByRole('link', { name: 'View cart' }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/cart$/);
+    expect(screen.queryByRole('region', { name: 'Cart summary' })).not.toBeInTheDocument();
   });
 
   it('shows account links and the name of a signed-in customer', () => {
