@@ -448,4 +448,47 @@ describe('Products page', () => {
     );
     expect(screen.queryByRole('heading', { name: 'Kayak Tour' })).not.toBeInTheDocument();
   });
+
+  it('writes the favourites filter to history so Back undoes it', async () => {
+    localStorage.setItem('booking.favourites', JSON.stringify(['p1']));
+    mockCatalog(() => [loft, kayak]);
+    renderProducts('/?sort=name');
+    await screen.findByRole('heading', { name: 'Harbour Loft' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Favourites only' }));
+    expect(currentParams().toString()).toBe('sort=name&fav=1');
+    expect(screen.queryByRole('heading', { name: 'Kayak Tour' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Go back' }));
+    expect(currentParams().toString()).toBe('sort=name');
+    expect(screen.getByRole('button', { name: 'Favourites only' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(screen.getByRole('heading', { name: 'Kayak Tour' })).toBeInTheDocument();
+  });
+
+  it('describes what the heart button will do', async () => {
+    mockCatalog(() => [loft]);
+    renderProducts();
+    await screen.findByRole('heading', { name: 'Harbour Loft' });
+
+    const heart = screen.getByRole('button', { name: 'Favourite Harbour Loft' });
+    expect(heart).toHaveAttribute('title', 'Add to favourites');
+    fireEvent.click(heart);
+    expect(heart).toHaveAttribute('title', 'Remove from favourites');
+  });
+
+  it('says nothing matches when favourites exist but other filters hide them', async () => {
+    localStorage.setItem('booking.favourites', JSON.stringify(['p2']));
+    mockCatalog((url) => {
+      const category = url.searchParams.get('category');
+      return [loft, kayak].filter((p) => !category || p.category === category);
+    });
+    renderProducts('/?fav=1&category=Stays');
+
+    expect(await screen.findByText('Nothing matches that search.')).toBeInTheDocument();
+    expect(screen.queryByText(/No favourites yet/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Harbour Loft' })).not.toBeInTheDocument();
+  });
 });
