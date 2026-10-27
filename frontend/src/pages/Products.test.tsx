@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { CartProvider } from '../lib/cart.tsx';
 import type { Product } from '../types.ts';
@@ -38,14 +38,33 @@ function lastUrl(fetchMock: ReturnType<typeof mockCatalog>): URL {
   return new URL(String(fetchMock.mock.lastCall?.[0]), 'http://localhost');
 }
 
+/** Shows the current query string and offers a Back button, to check what the page writes to history. */
+function LocationProbe() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  return (
+    <>
+      <span data-testid="search">{location.search}</span>
+      <button type="button" onClick={() => navigate(-1)}>
+        Go back
+      </button>
+    </>
+  );
+}
+
 function renderProducts(path = '/') {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <CartProvider>
         <Products />
+        <LocationProbe />
       </CartProvider>
     </MemoryRouter>,
   );
+}
+
+function currentParams(): URLSearchParams {
+  return new URLSearchParams(screen.getByTestId('search').textContent ?? '');
 }
 
 function card(name: string): HTMLElement {
@@ -253,6 +272,78 @@ describe('Products page', () => {
     await screen.findByRole('heading', { name: 'Kayak Tour' });
 
     expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(2);
+  });
+
+  it('combines category, price range and sort from the URL', async () => {
+    const tent: Product = { ...loft, id: 'p3', name: 'Alpine Tent', price: 90 };
+    const villa: Product = { ...loft, id: 'p4', name: 'Cliff Villa', price: 900 };
+    const fetchMock = mockCatalog((url) => {
+      const category = url.searchParams.get('category');
+      return [villa, kayak, loft, tent].filter((p) => !category || p.category === category);
+    });
+    renderProducts('/?category=Stays&min=50&max=500&sort=price-desc');
+    await screen.findByRole('heading', { name: 'Alpine Tent' });
+
+    expect(screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
+      'Harbour Loft',
+      'Alpine Tent',
+    ]);
+    expect(screen.getByRole('spinbutton', { name: 'Maximum price' })).toHaveValue(500);
+    expect(screen.getByRole('combobox', { name: 'Sort by' })).toHaveValue('price-desc');
+    expect(lastUrl(fetchMock).searchParams.get('category')).toBe('Stays');
+  });
+
+  it('writes filters to the query string and drops them at their defaults', async () => {
+    mockCatalog(() => [kayak, loft]);
+    renderProducts();
+    await screen.findByRole('heading', { name: 'Kayak Tour' });
+    const names = () => screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+    const select = screen.getByRole('combobox', { name: 'Sort by' });
+    const min = screen.getByRole('spinbutton', { name: 'Minimum price' });
+
+    fireEvent.change(select, { target: { value: 'price-desc' } });
+    fireEvent.change(min, { target: { value: '20' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Stays' }));
+    expect(currentParams().get('sort')).toBe('price-desc');
+    expect(currentParams().get('min')).toBe('20');
+    expect(currentParams().get('category')).toBe('Stays');
+
+    fireEvent.change(select, { target: { value: 'featured' } });
+    fireEvent.change(min, { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    expect(currentParams().toString()).toBe('');
+    // Back to featured means the order the server sent.
+    expect(names()).toEqual(['Kayak Tour', 'Harbour Loft']);
+  });
+
+  it('lets Back undo a sort or category change but not each typed price', async () => {
+    mockCatalog((url) => {
+      const category = url.searchParams.get('category');
+      return [loft, kayak].filter((p) => !category || p.category === category);
+    });
+    renderProducts();
+    await screen.findByRole('heading', { name: 'Kayak Tour' });
+    const select = screen.getByRole('combobox', { name: 'Sort by' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stays' }));
+    fireEvent.change(select, { target: { value: 'name' } });
+    const min = screen.getByRole('spinbutton', { name: 'Minimum price' });
+    fireEvent.change(min, { target: { value: '1' } });
+    fireEvent.change(min, { target: { value: '10' } });
+    fireEvent.change(min, { target: { value: '100' } });
+    expect(currentParams().toString()).toBe('category=Stays&sort=name&min=100');
+
+    // The typed price replaced the sort entry, so one Back skips past it.
+    fireEvent.click(screen.getByRole('button', { name: 'Go back' }));
+    expect(currentParams().toString()).toBe('category=Stays');
+    expect(select).toHaveValue('featured');
+    expect(min).toHaveValue(null);
+    expect(screen.getByRole('button', { name: 'Stays' })).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Go back' }));
+    expect(currentParams().toString()).toBe('');
+    expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
+    expect(await screen.findByRole('heading', { name: 'Kayak Tour' })).toBeInTheDocument();
   });
 
   it('adds to the cart and stops at the available stock', async () => {
