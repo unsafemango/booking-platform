@@ -571,6 +571,11 @@ main.container {
 .qty .btn {
   padding: 2px 10px;
 }
+.qty-input {
+  width: 4.5em;
+  padding: 4px 6px;
+  text-align: center;
+}
 
 /* Orders */
 .orders-layout {

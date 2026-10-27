@@ -21,6 +21,58 @@ function shortLabel(stock: number): string {
   return stock <= 0 ? 'Sold out' : `Only ${stock} left`;
 }
 
+interface QuantityInputProps {
+  name: string;
+  quantity: number;
+  stock: number;
+  onChange: (quantity: number) => void;
+}
+
+/**
+ * Typed quantity for a cart line. The value is applied on blur or Enter and kept
+ * between 1 and the available stock; anything that isn't a number is reverted.
+ */
+function QuantityInput({ name, quantity, stock, onChange }: QuantityInputProps) {
+  const [draft, setDraft] = useState(String(quantity));
+  const [shown, setShown] = useState(quantity);
+  // Follow changes made elsewhere (the +/− buttons, a stock refresh).
+  if (shown !== quantity) {
+    setShown(quantity);
+    setDraft(String(quantity));
+  }
+
+  const max = Math.max(1, stock);
+
+  function commit() {
+    const parsed = Number.parseInt(draft, 10);
+    if (Number.isNaN(parsed)) {
+      setDraft(String(quantity));
+      return;
+    }
+    const next = Math.min(Math.max(parsed, 1), max);
+    setDraft(String(next));
+    if (next !== quantity) onChange(next);
+  }
+
+  return (
+    <input
+      type="number"
+      className="input qty-input"
+      inputMode="numeric"
+      min={1}
+      max={max}
+      step={1}
+      aria-label={`Quantity of ${name}`}
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') commit();
+      }}
+    />
+  );
+}
+
 export default function Cart() {
   const { lines, total, setQuantity, refresh, clear } = useCart();
   const { user } = useAuth();
@@ -97,7 +149,12 @@ export default function Cart() {
               >
                 −
               </Button>
-              <span>{quantity}</span>
+              <QuantityInput
+                name={product.name}
+                quantity={quantity}
+                stock={product.stock}
+                onChange={(next) => setQuantity(product.id, next)}
+              />
               <Button
                 variant="ghost"
                 aria-label="Add one"
