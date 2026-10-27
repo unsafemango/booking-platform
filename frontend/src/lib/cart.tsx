@@ -44,6 +44,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [lines]);
 
+  // Another tab changed the cart (or cleared storage): adopt its copy so tabs don't overwrite each other.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.storageArea !== localStorage || (e.key !== null && e.key !== CART_KEY)) return;
+      setLines(loadCart());
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   const value = useMemo<CartContextValue>(() => {
     const setQuantity = (productId: string, quantity: number) =>
       setLines((current) =>
