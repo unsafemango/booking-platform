@@ -17,8 +17,10 @@ async function fetchLatest(lines: CartLine[]): Promise<Product[]> {
   return results.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []));
 }
 
-function shortLabel(stock: number): string {
-  return stock <= 0 ? 'Sold out' : `Only ${stock} left`;
+/** Availability shown under a cart line; a warning when the line asks for more than is left. */
+function stockLabel(stock: number, quantity: number): string {
+  if (stock <= 0) return 'Sold out';
+  return quantity > stock ? `Only ${stock} left` : `${stock} available`;
 }
 
 interface QuantityInputProps {
@@ -137,9 +139,11 @@ export default function Cart() {
             <div>
               <strong>{product.name}</strong>
               <div className="muted">{money(product.price)} each</div>
-              {quantity > product.stock && (
-                <div className="stock low">{shortLabel(product.stock)}</div>
-              )}
+              <div
+                className={`stock ${quantity > product.stock || product.stock < 5 ? 'low' : ''}`}
+              >
+                {stockLabel(product.stock, quantity)}
+              </div>
             </div>
             <div className="qty">
               <Button

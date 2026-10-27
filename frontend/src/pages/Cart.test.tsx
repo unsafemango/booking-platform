@@ -90,6 +90,18 @@ describe('Cart checkout', () => {
     expect(screen.getByRole('link', { name: 'Browse bookings' })).toHaveAttribute('href', '/');
   });
 
+  it('shows how many are available under each line', () => {
+    fillCart([
+      { product: loft, quantity: 1 },
+      { product: { ...kayak, stock: 12 }, quantity: 3 },
+    ]);
+    renderCart();
+
+    expect(screen.getByText('2 available')).toHaveClass('stock', 'low');
+    expect(screen.getByText('12 available')).not.toHaveClass('low');
+    expect(screen.queryByText(/left$|Sold out/)).not.toBeInTheDocument();
+  });
+
   it('sends a logged-out visitor to log in and back to the cart', () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch');
     fillCart([{ product: loft, quantity: 1 }]);
