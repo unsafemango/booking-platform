@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import ConfirmDialog from '../components/ConfirmDialog.tsx';
@@ -13,10 +13,18 @@ import { useToast } from '../lib/toast.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import { useFetch } from '../lib/useFetch.ts';
 import { useOrderUpdates } from '../lib/useOrderUpdates.ts';
-import type { Notification, Order } from '../types.ts';
+import type { Notification, Order, OrderStatus } from '../types.ts';
+
+const STATUSES: OrderStatus[] = ['PLACED', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
 
 function isCancellable(order: Order) {
   return order.status === 'PLACED' || order.status === 'CONFIRMED';
+}
+
+/** The ?status= value as an order status, or null (All) when missing or unknown. */
+function toStatus(value: string | null): OrderStatus | null {
+  const upper = value?.toUpperCase();
+  return STATUSES.find((s) => s === upper) ?? null;
 }
 
 export default function Orders() {
@@ -32,6 +40,17 @@ export default function Orders() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const { show } = useToast();
+  const [params, setParams] = useSearchParams();
+  const status = toStatus(params.get('status'));
+  const setStatus = (value: OrderStatus | null) =>
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (value) next.set('status', value.toLowerCase());
+      else next.delete('status');
+      return next;
+    });
+  // Filtered on the client; a live update can move an order in or out of the current view.
+  const shown = status ? orders?.filter((o) => o.status === status) : orders;
   useDocumentTitle('My bookings');
 
   // Pending flash and reload timers, cleared on unmount so none fire after the page is gone.
@@ -123,8 +142,35 @@ export default function Orders() {
             No bookings yet. <Link to="/">Find something to book.</Link>
           </p>
         )}
+        {orders !== undefined && orders.length > 0 && (
+          <div className="chips order-filters" role="group" aria-label="Filter by status">
+            {[null, ...STATUSES].map((s) => {
+              const count = s ? orders.filter((o) => o.status === s).length : orders.length;
+              return (
+                <button
+                  key={s ?? 'all'}
+                  type="button"
+                  className={`chip ${s === status ? 'active' : ''}`}
+                  aria-pressed={s === status}
+                  onClick={() => setStatus(s)}
+                >
+                  {s ? s.charAt(0) + s.slice(1).toLowerCase() : 'All'}{' '}
+                  <span className="chip-count">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {status && orders !== undefined && orders.length > 0 && shown?.length === 0 && (
+          <div className="empty-filter">
+            <p className="muted">No {status.toLowerCase()} bookings.</p>
+            <Button variant="ghost" onClick={() => setStatus(null)}>
+              Show all bookings
+            </Button>
+          </div>
+        )}
         <div className="stack">
-          {orders?.map((o) => (
+          {shown?.map((o) => (
             <article key={o.id} className={`card order ${flash === o.id ? 'flash' : ''}`}>
               <div className="order-head">
                 <div>

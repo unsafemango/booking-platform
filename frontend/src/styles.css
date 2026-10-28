@@ -317,6 +317,19 @@ main.container {
   color: var(--bg);
   border-color: var(--text);
 }
+.chip-count {
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+.order-filters {
+  margin-bottom: 16px;
+}
+.empty-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 .alert {
   color: var(--danger);
   background: color-mix(in srgb, var(--danger) 10%, transparent);
