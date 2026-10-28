@@ -16,8 +16,11 @@ export interface CartContextValue {
   add: (product: Product) => void;
   /** Sets a line's quantity; zero or less removes the line. */
   setQuantity: (productId: string, quantity: number) => void;
-  /** Replaces the stored product details (price, stock, ...) of matching lines; quantities are kept. */
-  refresh: (products: Product[]) => void;
+  /**
+   * Replaces the stored product details (price, stock, ...) of matching lines; quantities are kept.
+   * Lines for `removedIds` (products that no longer exist) are dropped.
+   */
+  refresh: (products: Product[], removedIds?: string[]) => void;
   clear: () => void;
 }
 
@@ -75,12 +78,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
             : [...current, { product, quantity: 1 }],
         ),
       setQuantity,
-      refresh: (products) =>
+      refresh: (products, removedIds = []) =>
         setLines((current) =>
-          current.map((l) => ({
-            ...l,
-            product: products.find((p) => p.id === l.product.id) ?? l.product,
-          })),
+          current
+            .filter((l) => !removedIds.includes(l.product.id))
+            .map((l) => ({
+              ...l,
+              product: products.find((p) => p.id === l.product.id) ?? l.product,
+            })),
         ),
       clear: () => setLines([]),
     };

@@ -193,6 +193,72 @@ describe('Cart checkout', () => {
     expect(screen.getAllByRole('button', { name: 'Add one' })[0]).toBeDisabled();
   });
 
+  it('drops an item that was removed from the catalog and says so', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const json = (status: number, body: unknown) =>
+        new Response(JSON.stringify(body), { status });
+      if (input === '/api/orders') return json(404, { error: 'Product not found' });
+      if (input === '/api/products/p2') return json(200, kayak);
+      return json(404, { error: 'Product not found' });
+    });
+    signIn();
+    fillCart([
+      { product: loft, quantity: 1 },
+      { product: kayak, quantity: 2 },
+    ]);
+    renderCart();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Book now' }));
+
+    expect(
+      await screen.findByText(
+        'Harbour Loft is no longer available and was removed from your cart.',
+      ),
+    ).toHaveClass('alert');
+    expect(screen.queryByText('Product not found')).not.toBeInTheDocument();
+    expect(screen.queryByText('Harbour Loft')).not.toBeInTheDocument();
+    expect(screen.getByText('Kayak Tour')).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(CART_KEY) ?? 'null')).toEqual([
+      { product: kayak, quantity: 2 },
+    ]);
+  });
+
+  it('keeps lines whose product could not be reloaded for another reason', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
+      input === '/api/orders'
+        ? new Response(JSON.stringify({ error: 'Product not found' }), { status: 404 })
+        : new Response(JSON.stringify({ error: 'Catalog is down' }), { status: 503 }),
+    );
+    signIn();
+    fillCart([{ product: loft, quantity: 1 }]);
+    renderCart();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Book now' }));
+
+    expect(await screen.findByText('Product not found')).toHaveClass('alert');
+    expect(screen.getByText('Harbour Loft')).toBeInTheDocument();
+    expect(screen.queryByText(/no longer available/)).not.toBeInTheDocument();
+  });
+
+  it('shows the notice on the empty cart when every item was removed', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () => new Response(JSON.stringify({ error: 'Product not found' }), { status: 404 }),
+    );
+    signIn();
+    fillCart([
+      { product: loft, quantity: 1 },
+      { product: kayak, quantity: 1 },
+    ]);
+    renderCart();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Book now' }));
+
+    expect(await screen.findByRole('heading', { name: 'Your cart is empty' })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Harbour Loft and Kayak Tour are no longer available and were removed from your cart.',
+    );
+  });
+
   it('marks a sold-out item', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
       input === '/api/orders'

@@ -103,6 +103,20 @@ describe('cart context', () => {
     expect(result.current.total).toBe(5);
   });
 
+  it('drops lines for products that no longer exist when refreshing', () => {
+    const { result } = renderCart();
+    act(() => {
+      result.current.add(product('a', 1));
+      result.current.add(product('b', 2));
+    });
+
+    const updated = { ...product('b', 3), stock: 4 };
+    act(() => result.current.refresh([updated], ['a']));
+
+    expect(result.current.lines).toEqual([{ product: updated, quantity: 1 }]);
+    expect(result.current.count).toBe(1);
+  });
+
   it('clears all lines', () => {
     const { result } = renderCart();
 

@@ -11,10 +11,32 @@ import { useToast } from '../lib/toast.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import type { PlaceOrderRequest, Product } from '../types.ts';
 
-/** Reloads every product in the cart; products that fail to load are left out. */
-async function fetchLatest(lines: CartLine[]): Promise<Product[]> {
+interface LatestProducts {
+  products: Product[];
+  /** Lines whose product the catalog no longer has (404). */
+  missing: CartLine[];
+}
+
+/**
+ * Reloads every product in the cart. Products that fail to load for another reason
+ * (network, server error) are left out of both lists, so their lines stay as they are.
+ */
+async function fetchLatest(lines: CartLine[]): Promise<LatestProducts> {
   const results = await Promise.allSettled(lines.map((l) => getProduct(l.product.id)));
-  return results.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []));
+  const latest: LatestProducts = { products: [], missing: [] };
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled') latest.products.push(r.value);
+    else if (r.reason instanceof ApiError && r.reason.status === 404) latest.missing.push(lines[i]);
+  });
+  return latest;
+}
+
+/** Notice for lines dropped because their product was removed from the catalog. */
+function removedNotice(missing: CartLine[]): string {
+  const names = new Intl.ListFormat('en').format(missing.map((l) => l.product.name));
+  return missing.length === 1
+    ? `${names} is no longer available and was removed from your cart.`
+    : `${names} are no longer available and were removed from your cart.`;
 }
 
 /** Availability shown under a cart line; a warning when the line asks for more than is left. */
@@ -82,6 +104,7 @@ export default function Cart() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [removed, setRemoved] = useState<string | null>(null);
   useDocumentTitle('Cart');
 
   async function checkout() {
@@ -91,6 +114,7 @@ export default function Cart() {
     }
     setSubmitting(true);
     setError(null);
+    setRemoved(null);
     try {
       const body: PlaceOrderRequest = {
         items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity })),
@@ -104,15 +128,21 @@ export default function Cart() {
       navigate('/orders');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
-      if (e instanceof ApiError && e.status === 409) {
-        // Someone else booked first: show current availability next to each line.
-        const latest = await fetchLatest(lines);
-        refresh(latest);
-        const short = latest.some((p) => {
+      if (e instanceof ApiError && (e.status === 409 || e.status === 404)) {
+        // Someone else booked first, or a product was taken off the catalog: show current
+        // availability next to each line and drop the lines that can't be booked any more.
+        const { products, missing } = await fetchLatest(lines);
+        refresh(
+          products,
+          missing.map((l) => l.product.id),
+        );
+        if (missing.length > 0) setRemoved(removedNotice(missing));
+        const short = products.some((p) => {
           const line = lines.find((l) => l.product.id === p.id);
           return line !== undefined && line.quantity > p.stock;
         });
         if (short) setError(`${e.message.replace(/\.?$/, '.')} Adjust the items marked below.`);
+        else if (missing.length > 0) setError(null);
       }
     } finally {
       setSubmitting(false);
@@ -123,6 +153,7 @@ export default function Cart() {
     return (
       <section className="empty">
         <h1>Your cart is empty</h1>
+        {removed && <Alert>{removed}</Alert>}
         <Link to="/" className="btn">
           Browse bookings
         </Link>
@@ -176,6 +207,7 @@ export default function Cart() {
           <strong>{money(total)}</strong>
         </div>
       </div>
+      {removed && <Alert>{removed}</Alert>}
       {error && <Alert>{error}</Alert>}
       <div className="actions">
         <Button variant="ghost" onClick={clear}>
