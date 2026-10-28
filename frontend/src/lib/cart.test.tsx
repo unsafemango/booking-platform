@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Product } from '../types.ts';
 import { CartProvider, useCart } from './cart.tsx';
 
@@ -22,6 +22,11 @@ const wrapper = ({ children }: { children: ReactNode }) => <CartProvider>{childr
 
 function renderCart() {
   return renderHook(() => useCart(), { wrapper });
+}
+
+/** What the browser fires in this tab when another tab writes to storage. */
+function sendStorageEvent(key: string | null, storageArea: Storage = localStorage) {
+  window.dispatchEvent(new StorageEvent('storage', { key, storageArea }));
 }
 
 describe('cart context', () => {
@@ -147,6 +152,47 @@ describe('cart context', () => {
 
     localStorage.setItem(CART_KEY, '{"a":1}');
     expect(renderCart().result.current.lines).toEqual([]);
+  });
+
+  it('adopts the cart another tab saved', () => {
+    const { result } = renderCart();
+    act(() => result.current.add(product('a', 1)));
+
+    const other = [{ product: product('b', 4), quantity: 3 }];
+    localStorage.setItem(CART_KEY, JSON.stringify(other));
+    act(() => sendStorageEvent(CART_KEY));
+
+    expect(result.current.lines).toEqual(other);
+    expect(result.current.count).toBe(3);
+    expect(result.current.total).toBe(12);
+  });
+
+  it('empties the cart when another tab clears storage', () => {
+    const { result } = renderCart();
+    act(() => result.current.add(product('a', 1)));
+
+    localStorage.clear();
+    act(() => sendStorageEvent(null));
+
+    expect(result.current.lines).toEqual([]);
+  });
+
+  it('ignores storage events for other keys and session storage', () => {
+    const { result } = renderCart();
+    act(() => result.current.add(product('a', 1)));
+    localStorage.setItem(CART_KEY, JSON.stringify([{ product: product('b', 4), quantity: 1 }]));
+
+    act(() => sendStorageEvent('booking.theme'));
+    act(() => sendStorageEvent(CART_KEY, sessionStorage));
+
+    expect(result.current.lines).toEqual([{ product: product('a', 1), quantity: 1 }]);
+  });
+
+  it('stops listening for other tabs once unmounted', () => {
+    const removeSpy = vi.spyOn(window, 'removeEventListener');
+    renderCart().unmount();
+
+    expect(removeSpy).toHaveBeenCalledWith('storage', expect.any(Function));
   });
 
   it('throws when used outside the provider', () => {

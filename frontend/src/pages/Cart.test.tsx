@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { tokenStore } from '../lib/api.ts';
@@ -275,5 +275,101 @@ describe('Cart checkout', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Not enough stock. Adjust the items marked below.',
     );
+  });
+});
+
+describe('Cart quantity input', () => {
+  function storedQuantities() {
+    const stored = JSON.parse(localStorage.getItem(CART_KEY) ?? 'null') as CartLine[];
+    return stored.map((l) => l.quantity);
+  }
+
+  it('applies a typed quantity on blur and updates the totals', () => {
+    fillCart([{ product: kayak, quantity: 1 }]);
+    renderCart();
+
+    const input = screen.getByRole('spinbutton', { name: 'Quantity of Kayak Tour' });
+    expect(input).toHaveValue(1);
+    expect(input).toHaveAttribute('max', '5');
+
+    fireEvent.change(input, { target: { value: '3' } });
+    expect(storedQuantities()).toEqual([1]);
+    fireEvent.blur(input);
+
+    expect(input).toHaveValue(3);
+    expect(screen.getAllByText('$166.50')).toHaveLength(2);
+    expect(storedQuantities()).toEqual([3]);
+  });
+
+  it('applies a typed quantity on Enter', () => {
+    fillCart([{ product: kayak, quantity: 1 }]);
+    renderCart();
+
+    const input = screen.getByRole('spinbutton', { name: 'Quantity of Kayak Tour' });
+    fireEvent.change(input, { target: { value: '4' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(storedQuantities()).toEqual([4]);
+    expect(screen.getByRole('button', { name: 'Add one' })).toBeEnabled();
+  });
+
+  it('keeps a typed quantity between 1 and the available stock', () => {
+    fillCart([{ product: loft, quantity: 1 }]);
+    renderCart();
+
+    const input = screen.getByRole('spinbutton', { name: 'Quantity of Harbour Loft' });
+    fireEvent.change(input, { target: { value: '9' } });
+    fireEvent.blur(input);
+    expect(input).toHaveValue(2);
+    expect(storedQuantities()).toEqual([2]);
+    expect(screen.getByRole('button', { name: 'Add one' })).toBeDisabled();
+
+    fireEvent.change(input, { target: { value: '0' } });
+    fireEvent.blur(input);
+    expect(input).toHaveValue(1);
+    expect(storedQuantities()).toEqual([1]);
+    expect(screen.getByText('Harbour Loft')).toBeInTheDocument();
+  });
+
+  it('reverts a value that is not a number', () => {
+    fillCart([{ product: kayak, quantity: 2 }]);
+    renderCart();
+
+    const input = screen.getByRole('spinbutton', { name: 'Quantity of Kayak Tour' });
+    fireEvent.change(input, { target: { value: '' } });
+    expect(input).toHaveValue(null);
+    fireEvent.blur(input);
+
+    expect(input).toHaveValue(2);
+    expect(storedQuantities()).toEqual([2]);
+  });
+
+  it('follows the − and + buttons', () => {
+    fillCart([{ product: kayak, quantity: 2 }]);
+    renderCart();
+
+    const input = screen.getByRole('spinbutton', { name: 'Quantity of Kayak Tour' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add one' }));
+    expect(input).toHaveValue(3);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove one' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove one' }));
+    expect(input).toHaveValue(1);
+    expect(storedQuantities()).toEqual([1]);
+  });
+
+  it('shows a quantity changed in another tab', () => {
+    fillCart([{ product: kayak, quantity: 1 }]);
+    renderCart();
+
+    fillCart([{ product: kayak, quantity: 4 }]);
+    act(() => {
+      window.dispatchEvent(
+        new StorageEvent('storage', { key: CART_KEY, storageArea: localStorage }),
+      );
+    });
+
+    expect(screen.getByRole('spinbutton', { name: 'Quantity of Kayak Tour' })).toHaveValue(4);
+    expect(screen.getAllByText('$222.00')).toHaveLength(2);
   });
 });
