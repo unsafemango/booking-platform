@@ -6,6 +6,7 @@ import ConfirmDialog from '../components/ConfirmDialog.tsx';
 import Highlight from '../components/Highlight.tsx';
 import Input from '../components/Input.tsx';
 import OfflineBanner from '../components/OfflineBanner.tsx';
+import RelativeTime from '../components/RelativeTime.tsx';
 import { OrderListSkeleton } from '../components/Skeleton.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
 import { listNotifications } from '../api/notifications.ts';
@@ -224,7 +225,10 @@ export default function Orders() {
                   <Link to={`/orders/${o.id}`} className="mono">
                     <Highlight text={orderRef(o.id)} query={query} />
                   </Link>
-                  <span className="muted"> · {new Date(o.createdAt).toLocaleString()}</span>
+                  <span className="muted">
+                    {' '}
+                    · <RelativeTime value={o.createdAt} />
+                  </span>
                 </div>
                 <StatusBadge status={o.status} />
               </div>
@@ -258,7 +262,9 @@ export default function Orders() {
           {notifications.map((n, idx) => (
             <li key={`${n.orderId}-${n.sentAt}-${idx}`}>
               <div>{n.subject}</div>
-              <div className="muted small">{new Date(n.sentAt).toLocaleTimeString()}</div>
+              <div className="muted small">
+                <RelativeTime value={n.sentAt} />
+              </div>
             </li>
           ))}
         </ul>

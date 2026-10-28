@@ -4,6 +4,7 @@ import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import ConfirmDialog from '../components/ConfirmDialog.tsx';
 import OfflineBanner from '../components/OfflineBanner.tsx';
+import RelativeTime from '../components/RelativeTime.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
 import { cancelOrder, getOrder } from '../api/orders.ts';
 import { money, orderRef } from '../lib/api.ts';
@@ -117,9 +118,13 @@ export default function OrderDetail() {
         </div>
         <dl className="order-meta">
           <dt>Placed</dt>
-          <dd>{new Date(order.createdAt).toLocaleString()}</dd>
+          <dd>
+            <RelativeTime value={order.createdAt} />
+          </dd>
           <dt>Last update</dt>
-          <dd>{new Date(order.updatedAt).toLocaleString()}</dd>
+          <dd>
+            <RelativeTime value={order.updatedAt} />
+          </dd>
         </dl>
         <ul className="order-items">
           {order.items.map((i) => (
