@@ -3,6 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import ConfirmDialog from '../components/ConfirmDialog.tsx';
+import Highlight from '../components/Highlight.tsx';
+import Input from '../components/Input.tsx';
 import OfflineBanner from '../components/OfflineBanner.tsx';
 import { OrderListSkeleton } from '../components/Skeleton.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
@@ -27,6 +29,16 @@ function toStatus(value: string | null): OrderStatus | null {
   return STATUSES.find((s) => s === upper) ?? null;
 }
 
+/** Whether the order's reference (with or without the #) or one of its item names contains the query. */
+function matchesQuery(order: Order, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  const ref = orderRef(order.id).toLowerCase();
+  return (
+    ref.includes(needle) || order.items.some((i) => i.productName.toLowerCase().includes(needle))
+  );
+}
+
 export default function Orders() {
   const {
     data: orders,
@@ -42,15 +54,23 @@ export default function Orders() {
   const { show } = useToast();
   const [params, setParams] = useSearchParams();
   const status = toStatus(params.get('status'));
-  const setStatus = (value: OrderStatus | null) =>
-    setParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (value) next.set('status', value.toLowerCase());
-      else next.delete('status');
-      return next;
-    });
+  const query = params.get('q') ?? '';
+  const setParam = (key: string, value: string | null, replace = false) =>
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (value) next.set(key, value);
+        else next.delete(key);
+        return next;
+      },
+      { replace },
+    );
+  const setStatus = (value: OrderStatus | null) => setParam('status', value?.toLowerCase() ?? null);
+  // Replaced rather than pushed so each keystroke doesn't add a history entry.
+  const setQuery = (value: string) => setParam('q', value, true);
   // Filtered on the client; a live update can move an order in or out of the current view.
-  const shown = status ? orders?.filter((o) => o.status === status) : orders;
+  const matching = orders?.filter((o) => matchesQuery(o, query));
+  const shown = status ? matching?.filter((o) => o.status === status) : matching;
   useDocumentTitle('My bookings');
 
   // Pending flash and reload timers, cleared on unmount so none fire after the page is gone.
@@ -142,40 +162,67 @@ export default function Orders() {
             No bookings yet. <Link to="/">Find something to book.</Link>
           </p>
         )}
-        {orders !== undefined && orders.length > 0 && (
-          <div className="chips order-filters" role="group" aria-label="Filter by status">
-            {[null, ...STATUSES].map((s) => {
-              const count = s ? orders.filter((o) => o.status === s).length : orders.length;
-              return (
-                <button
-                  key={s ?? 'all'}
-                  type="button"
-                  className={`chip ${s === status ? 'active' : ''}`}
-                  aria-pressed={s === status}
-                  onClick={() => setStatus(s)}
-                >
-                  {s ? s.charAt(0) + s.slice(1).toLowerCase() : 'All'}{' '}
-                  <span className="chip-count">{count}</span>
-                </button>
-              );
-            })}
+        {orders !== undefined && orders.length > 0 && matching !== undefined && (
+          <div className="filters order-filters">
+            <Input
+              type="search"
+              aria-label="Search bookings by reference or item"
+              placeholder="Search by reference or item…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <div className="chips" role="group" aria-label="Filter by status">
+              {[null, ...STATUSES].map((s) => {
+                // Counts follow the search so each chip says what clicking it would show.
+                const count = s ? matching.filter((o) => o.status === s).length : matching.length;
+                return (
+                  <button
+                    key={s ?? 'all'}
+                    type="button"
+                    className={`chip ${s === status ? 'active' : ''}`}
+                    aria-pressed={s === status}
+                    onClick={() => setStatus(s)}
+                  >
+                    {s ? s.charAt(0) + s.slice(1).toLowerCase() : 'All'}{' '}
+                    <span className="chip-count">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
-        {status && orders !== undefined && orders.length > 0 && shown?.length === 0 && (
-          <div className="empty-filter">
-            <p className="muted">No {status.toLowerCase()} bookings.</p>
-            <Button variant="ghost" onClick={() => setStatus(null)}>
-              Show all bookings
-            </Button>
-          </div>
-        )}
+        {(status || query.trim()) &&
+          orders !== undefined &&
+          orders.length > 0 &&
+          shown?.length === 0 && (
+            <div className="empty-filter">
+              <p className="muted">
+                {query.trim()
+                  ? `No ${status ? `${status.toLowerCase()} ` : ''}bookings match "${query.trim()}".`
+                  : `No ${status?.toLowerCase()} bookings.`}
+              </p>
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  setParams((prev) => {
+                    const next = new URLSearchParams(prev);
+                    next.delete('status');
+                    next.delete('q');
+                    return next;
+                  })
+                }
+              >
+                Show all bookings
+              </Button>
+            </div>
+          )}
         <div className="stack">
           {shown?.map((o) => (
             <article key={o.id} className={`card order ${flash === o.id ? 'flash' : ''}`}>
               <div className="order-head">
                 <div>
                   <Link to={`/orders/${o.id}`} className="mono">
-                    {orderRef(o.id)}
+                    <Highlight text={orderRef(o.id)} query={query} />
                   </Link>
                   <span className="muted"> · {new Date(o.createdAt).toLocaleString()}</span>
                 </div>
@@ -185,7 +232,7 @@ export default function Orders() {
                 {o.items.map((i) => (
                   <li key={i.productId}>
                     <span>
-                      {i.quantity} × {i.productName}
+                      {i.quantity} × <Highlight text={i.productName} query={query} />
                     </span>
                     <span>{money(i.unitPrice * i.quantity)}</span>
                   </li>
