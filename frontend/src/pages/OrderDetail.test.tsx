@@ -100,6 +100,20 @@ describe('Order detail page', () => {
     );
   });
 
+  it('opens the print dialog for a receipt with the full placed date', async () => {
+    mockFetch(200, loftOrder);
+    const print = vi.spyOn(window, 'print').mockImplementation(() => {});
+    renderDetail();
+    await screen.findByRole('heading', { name: 'Booking #AAAAAAAA' });
+
+    expect(
+      screen.getByText(new RegExp(`placed ${new Date(loftOrder.createdAt).toLocaleString()}`)),
+    ).toHaveClass('print-only');
+    fireEvent.click(screen.getByRole('button', { name: 'Print receipt' }));
+    expect(print).toHaveBeenCalledTimes(1);
+    print.mockRestore();
+  });
+
   it('cancels the order and hides the cancel button', async () => {
     const fetchMock = mockFetch(200, loftOrder);
     renderDetail();

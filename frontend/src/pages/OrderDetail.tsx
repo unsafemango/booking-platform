@@ -121,7 +121,11 @@ export default function OrderDetail() {
           </div>
           <StatusBadge status={order.status} />
         </div>
-        <dl className="order-meta">
+        <p className="print-only">
+          Receipt · placed {new Date(order.createdAt).toLocaleString()} · printed{' '}
+          {new Date().toLocaleString()}
+        </p>
+        <dl className="order-meta no-print">
           <dt>Placed</dt>
           <dd>
             <RelativeTime value={order.createdAt} />
@@ -131,7 +135,9 @@ export default function OrderDetail() {
             <RelativeTime value={order.updatedAt} />
           </dd>
         </dl>
-        <OrderTimeline order={order} />
+        <div className="no-print">
+          <OrderTimeline order={order} />
+        </div>
         <ul className="order-items">
           {order.items.map((i) => (
             <li key={i.productId}>
@@ -146,13 +152,20 @@ export default function OrderDetail() {
         {actionError && <Alert>{actionError}</Alert>}
         <div className="order-foot">
           <strong>Total {money(order.total)}</strong>
-          {cancellable && (
-            <Button variant="danger" onClick={() => setConfirming(true)}>
-              Cancel booking
+          <div className="order-actions no-print">
+            <Button variant="ghost" onClick={() => window.print()}>
+              Print receipt
             </Button>
-          )}
+            {cancellable && (
+              <Button variant="danger" onClick={() => setConfirming(true)}>
+                Cancel booking
+              </Button>
+            )}
+          </div>
         </div>
-        <p className="muted small">{live ? 'Live updates on' : 'Connecting for live updates…'}</p>
+        <p className="muted small no-print">
+          {live ? 'Live updates on' : 'Connecting for live updates…'}
+        </p>
       </article>
 
       <ConfirmDialog

@@ -685,6 +685,11 @@ main.container {
 .order-detail {
   max-width: 720px;
 }
+.order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .order-title {
   display: flex;
   align-items: center;
@@ -997,4 +1002,44 @@ p.image-preview {
   align-items: center;
   gap: 12px;
   white-space: nowrap;
+}
+
+/* Printing: only the page content, in black on white whatever the theme. */
+.print-only {
+  display: none;
+}
+@media print {
+  :root,
+  :root:not([data-theme='light']),
+  :root[data-theme='dark'] {
+    --bg: #fff;
+    --surface: #fff;
+    --text: #000;
+    --muted: #444;
+    --border: #bbb;
+    --shadow: none;
+    color-scheme: light;
+  }
+  .nav,
+  .skip-link,
+  .toasts,
+  .offline-banner,
+  .back-link,
+  .dialog-backdrop,
+  .btn,
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block;
+  }
+  .order-detail {
+    max-width: none;
+    border: none;
+    padding: 0;
+  }
+  .order-detail a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
