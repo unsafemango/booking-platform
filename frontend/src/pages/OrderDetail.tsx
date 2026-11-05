@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import ConfirmDialog from '../components/ConfirmDialog.tsx';
+import CopyButton from '../components/CopyButton.tsx';
 import OfflineBanner from '../components/OfflineBanner.tsx';
 import OrderTimeline from '../components/OrderTimeline.tsx';
 import RelativeTime from '../components/RelativeTime.tsx';
@@ -112,9 +113,12 @@ export default function OrderDetail() {
       <OfflineBanner connected={live} />
       <article className="card order order-detail">
         <div className="order-head">
-          <h1>
-            Booking <span className="mono">{orderRef(order.id)}</span>
-          </h1>
+          <div className="order-title">
+            <h1>
+              Booking <span className="mono">{orderRef(order.id)}</span>
+            </h1>
+            <CopyButton text={orderRef(order.id)} label="Copy reference" />
+          </div>
           <StatusBadge status={order.status} />
         </div>
         <dl className="order-meta">

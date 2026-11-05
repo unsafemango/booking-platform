@@ -285,6 +285,11 @@ main.container {
 .btn-ghost.danger {
   color: var(--danger);
 }
+.btn-small {
+  padding: 3px 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
 .input {
   width: 100%;
   padding: 9px 12px;
@@ -679,6 +684,12 @@ main.container {
 }
 .order-detail {
   max-width: 720px;
+}
+.order-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .order-detail h1 {
   margin: 0;
