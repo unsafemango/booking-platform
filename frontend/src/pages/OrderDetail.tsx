@@ -4,6 +4,7 @@ import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import ConfirmDialog from '../components/ConfirmDialog.tsx';
 import OfflineBanner from '../components/OfflineBanner.tsx';
+import OrderTimeline from '../components/OrderTimeline.tsx';
 import RelativeTime from '../components/RelativeTime.tsx';
 import StatusBadge from '../components/StatusBadge.tsx';
 import { cancelOrder, getOrder } from '../api/orders.ts';
@@ -126,6 +127,7 @@ export default function OrderDetail() {
             <RelativeTime value={order.updatedAt} />
           </dd>
         </dl>
+        <OrderTimeline order={order} />
         <ul className="order-items">
           {order.items.map((i) => (
             <li key={i.productId}>

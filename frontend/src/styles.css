@@ -699,6 +699,48 @@ main.container {
 .profile-meta dd {
   margin: 0;
 }
+.timeline {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+.timeline-step {
+  display: grid;
+  gap: 2px;
+  padding-left: 18px;
+  position: relative;
+}
+.timeline-step::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.35em;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+}
+.timeline-done::before {
+  border-color: var(--ok);
+  background: var(--ok);
+}
+.timeline-current::before {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.timeline-current.timeline-cancelled::before {
+  border-color: var(--danger);
+  background: var(--danger);
+}
+.timeline-current .timeline-label {
+  font-weight: 600;
+}
+.timeline-upcoming .timeline-label {
+  color: var(--muted);
+}
 .profile {
   max-width: 520px;
 }
