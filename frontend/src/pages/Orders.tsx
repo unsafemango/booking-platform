@@ -19,6 +19,7 @@ import { useOrderUpdates } from '../lib/useOrderUpdates.ts';
 import type { Notification, Order, OrderStatus } from '../types.ts';
 
 const STATUSES: OrderStatus[] = ['PLACED', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
+const PAGE_SIZE = 10;
 
 function isCancellable(order: Order) {
   return order.status === 'PLACED' || order.status === 'CONFIRMED';
@@ -62,6 +63,8 @@ export default function Orders() {
         const next = new URLSearchParams(prev);
         if (value) next.set(key, value);
         else next.delete(key);
+        // A new filter or search starts again from the first page.
+        if (key !== 'page') next.delete('page');
         return next;
       },
       { replace },
@@ -71,7 +74,12 @@ export default function Orders() {
   const setQuery = (value: string) => setParam('q', value, true);
   // Filtered on the client; a live update can move an order in or out of the current view.
   const matching = orders?.filter((o) => matchesQuery(o, query));
-  const shown = status ? matching?.filter((o) => o.status === status) : matching;
+  const filtered = status ? matching?.filter((o) => o.status === status) : matching;
+  const pageCount = Math.max(1, Math.ceil((filtered?.length ?? 0) / PAGE_SIZE));
+  // Clamped so a stale ?page= (or one past the end after a cancel) still shows something.
+  const page = Math.min(Math.max(1, Number.parseInt(params.get('page') ?? '', 10) || 1), pageCount);
+  const shown = filtered?.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const setPage = (value: number) => setParam('page', value > 1 ? String(value) : null);
   useDocumentTitle('My bookings');
 
   // Pending flash and reload timers, cleared on unmount so none fire after the page is gone.
@@ -209,6 +217,7 @@ export default function Orders() {
                     const next = new URLSearchParams(prev);
                     next.delete('status');
                     next.delete('q');
+                    next.delete('page');
                     return next;
                   })
                 }
@@ -253,6 +262,19 @@ export default function Orders() {
             </article>
           ))}
         </div>
+        {pageCount > 1 && (
+          <nav className="pager" aria-label="Bookings pages">
+            <Button variant="ghost" disabled={page === 1} onClick={() => setPage(page - 1)}>
+              Previous
+            </Button>
+            <span className="muted">
+              Page {page} of {pageCount}
+            </span>
+            <Button variant="ghost" disabled={page === pageCount} onClick={() => setPage(page + 1)}>
+              Next
+            </Button>
+          </nav>
+        )}
       </section>
 
       <aside className="card inbox">

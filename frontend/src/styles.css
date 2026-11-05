@@ -685,6 +685,13 @@ main.container {
 .order-detail {
   max-width: 720px;
 }
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+}
 .order-actions {
   display: flex;
   flex-wrap: wrap;
