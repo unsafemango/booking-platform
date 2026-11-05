@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tokenStore } from '../lib/api.ts';
 import { ToastProvider } from '../lib/toast.tsx';
@@ -69,11 +69,17 @@ function pushUpdate(event: OrderUpdateEvent) {
   act(() => socket.emit('order:update', event));
 }
 
-function renderOrders() {
+/** Shows the current query string, to check what the page keeps in the URL. */
+function LocationProbe() {
+  return <span data-testid="search">{useLocation().search}</span>;
+}
+
+function renderOrders(path = '/orders') {
   return render(
     <ToastProvider>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <Orders />
+        <LocationProbe />
       </MemoryRouter>
     </ToastProvider>,
   );
@@ -331,5 +337,159 @@ describe('Orders live updates', () => {
 
     await vi.advanceTimersByTimeAsync(1500);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+/** n orders, newest first, with refs #00000001… and item names "Room 1"…, all PLACED. */
+function manyOrders(n: number): Order[] {
+  return Array.from({ length: n }, (_, i) => ({
+    ...loftOrder,
+    id: `${String(i + 1).padStart(8, '0')}-0000-4000-8000-000000000000`,
+    items: [{ productId: `p${i + 1}`, productName: `Room ${i + 1}`, unitPrice: 10, quantity: 1 }],
+    total: 10,
+  }));
+}
+
+function chip(name: RegExp) {
+  return within(screen.getByRole('group', { name: 'Filter by status' })).getByRole('button', {
+    name,
+  });
+}
+
+describe('Orders filters, search and pagination', () => {
+  beforeEach(() => {
+    socket.handlers.clear();
+    tokenStore.set('jwt-123');
+  });
+
+  it('filters by status with counts on each chip and keeps it in ?status=', async () => {
+    mockApi([loftOrder, kayakOrder], () => []);
+    renderOrders();
+    await screen.findByText('Harbour Loft', { exact: false });
+
+    expect(chip(/^All/)).toHaveTextContent('All 2');
+    expect(chip(/^Placed/)).toHaveTextContent('Placed 1');
+    expect(chip(/^Cancelled/)).toHaveTextContent('Cancelled 0');
+    expect(chip(/^All/)).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(chip(/^Confirmed/));
+    expect(chip(/^Confirmed/)).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(orderCard(kayakOrder.id)).toBeInTheDocument();
+    expect(screen.getByTestId('search')).toHaveTextContent('?status=confirmed');
+
+    fireEvent.click(chip(/^All/));
+    expect(screen.getAllByRole('article')).toHaveLength(2);
+    expect(screen.getByTestId('search')).toBeEmptyDOMElement();
+  });
+
+  it('reads the status filter from the URL and ignores unknown values', async () => {
+    mockApi([loftOrder, kayakOrder], () => []);
+    const { unmount } = renderOrders('/orders?status=PLACED');
+    await screen.findByText('Harbour Loft', { exact: false });
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(chip(/^Placed/)).toHaveAttribute('aria-pressed', 'true');
+    unmount();
+
+    renderOrders('/orders?status=bogus');
+    await screen.findByText('Harbour Loft', { exact: false });
+    expect(screen.getAllByRole('article')).toHaveLength(2);
+    expect(chip(/^All/)).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('searches by reference or item name, highlights matches and updates the counts', async () => {
+    mockApi([loftOrder, kayakOrder], () => []);
+    renderOrders();
+    await screen.findByText('Harbour Loft', { exact: false });
+    const search = screen.getByRole('searchbox', { name: 'Search bookings by reference or item' });
+
+    fireEvent.change(search, { target: { value: 'kayak' } });
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(within(orderCard(kayakOrder.id)).getByText('Kayak').tagName).toBe('MARK');
+    expect(chip(/^All/)).toHaveTextContent('All 1');
+    expect(chip(/^Placed/)).toHaveTextContent('Placed 0');
+    expect(screen.getByTestId('search')).toHaveTextContent('?q=kayak');
+
+    // The reference matches with or without the leading #.
+    fireEvent.change(search, { target: { value: '#aaaa' } });
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(screen.getByText('Harbour Loft', { exact: false })).toBeInTheDocument();
+    fireEvent.change(search, { target: { value: 'aaaa' } });
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(screen.getByText('Harbour Loft', { exact: false })).toBeInTheDocument();
+  });
+
+  it('shows an empty state that clears the search and filter', async () => {
+    mockApi([loftOrder, kayakOrder], () => []);
+    renderOrders('/orders?status=cancelled&q=loft');
+    await screen.findByRole('group', { name: 'Filter by status' });
+
+    expect(screen.queryAllByRole('article')).toHaveLength(0);
+    expect(screen.getByText('No cancelled bookings match "loft".')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show all bookings' }));
+    expect(screen.getAllByRole('article')).toHaveLength(2);
+    expect(screen.getByTestId('search')).toBeEmptyDOMElement();
+    expect(screen.getByRole('searchbox')).toHaveValue('');
+  });
+
+  it('shows ten orders a page and pages with Previous and Next', async () => {
+    mockApi(manyOrders(23), () => []);
+    renderOrders();
+    await screen.findAllByRole('article');
+    const pager = screen.getByRole('navigation', { name: 'Bookings pages' });
+
+    expect(screen.getAllByRole('article')).toHaveLength(10);
+    expect(pager).toHaveTextContent('Page 1 of 3');
+    expect(within(pager).getByRole('button', { name: 'Previous' })).toBeDisabled();
+
+    fireEvent.click(within(pager).getByRole('button', { name: 'Next' }));
+    expect(screen.getByText('Room 11', { exact: false })).toBeInTheDocument();
+    expect(screen.getByTestId('search')).toHaveTextContent('?page=2');
+
+    fireEvent.click(within(pager).getByRole('button', { name: 'Next' }));
+    expect(screen.getAllByRole('article')).toHaveLength(3);
+    expect(pager).toHaveTextContent('Page 3 of 3');
+    expect(within(pager).getByRole('button', { name: 'Next' })).toBeDisabled();
+
+    fireEvent.click(within(pager).getByRole('button', { name: 'Previous' }));
+    fireEvent.click(within(pager).getByRole('button', { name: 'Previous' }));
+    expect(pager).toHaveTextContent('Page 1 of 3');
+    // Page 1 is the default, so it is left out of the URL.
+    expect(screen.getByTestId('search')).toBeEmptyDOMElement();
+  });
+
+  it('hides the pager when everything fits on one page', async () => {
+    mockApi(manyOrders(10), () => []);
+    renderOrders();
+    await screen.findAllByRole('article');
+    expect(screen.getAllByRole('article')).toHaveLength(10);
+    expect(screen.queryByRole('navigation', { name: 'Bookings pages' })).not.toBeInTheDocument();
+  });
+
+  it('clamps an out-of-range ?page= to the last page', async () => {
+    mockApi(manyOrders(15), () => []);
+    renderOrders('/orders?page=9');
+    await screen.findByText('Room 15', { exact: false });
+    expect(screen.getAllByRole('article')).toHaveLength(5);
+    expect(screen.getByRole('navigation', { name: 'Bookings pages' })).toHaveTextContent(
+      'Page 2 of 2',
+    );
+  });
+
+  it('goes back to the first page when the search or filter changes', async () => {
+    mockApi(manyOrders(23), () => []);
+    renderOrders('/orders?page=3');
+    await screen.findByText('Room 21', { exact: false });
+
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'room' } });
+    expect(screen.getByTestId('search')).toHaveTextContent('?q=room');
+    expect(screen.getByRole('navigation', { name: 'Bookings pages' })).toHaveTextContent(
+      'Page 1 of 3',
+    );
+
+    fireEvent.click(within(screen.getByRole('navigation')).getByRole('button', { name: 'Next' }));
+    fireEvent.click(chip(/^Placed/));
+    expect(screen.getByTestId('search')).toHaveTextContent('?q=room&status=placed');
   });
 });
