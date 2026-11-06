@@ -4,10 +4,12 @@ import CartSummary from './CartSummary.tsx';
 import ThemeToggle from './ThemeToggle.tsx';
 import { useAuth } from '../lib/auth.tsx';
 import { useCart } from '../lib/cart.tsx';
+import { useUnreadNotificationCount } from '../lib/useUnreadNotificationCount.ts';
 
 export default function Nav() {
   const { user, logout } = useAuth();
   const { count } = useCart();
+  const unread = useUnreadNotificationCount();
   const navigate = useNavigate();
 
   return (
@@ -24,7 +26,17 @@ export default function Nav() {
             <NavLink to="/cart">Cart{count > 0 && <span className="pill">{count}</span>}</NavLink>
             <CartSummary />
           </span>
-          {user && <NavLink to="/orders">My bookings</NavLink>}
+          {user && (
+            <NavLink to="/orders">
+              My bookings
+              {unread > 0 && (
+                <span className="pill">
+                  {unread}
+                  <span className="sr-only"> unread {unread === 1 ? 'email' : 'emails'}</span>
+                </span>
+              )}
+            </NavLink>
+          )}
           {user && <NavLink to="/profile">Profile</NavLink>}
           {user?.role === 'ADMIN' && <NavLink to="/admin">Admin</NavLink>}
         </nav>

@@ -68,12 +68,14 @@ describe('/admin route guard', () => {
     );
     expect(screen.queryByRole('heading', { name: 'Admin' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Admin' })).not.toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalled();
+    // Only the nav's unread email count is requested.
+    for (const [url] of fetchMock.mock.calls) expect(url).toBe('/api/notifications');
   });
 
   it('lets admins in and shows the Admin nav link', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify([loft]), { status: 200 }),
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (url) =>
+        new Response(JSON.stringify(url === '/api/notifications' ? [] : [loft]), { status: 200 }),
     );
     logInAs(admin);
     renderAt('/admin');

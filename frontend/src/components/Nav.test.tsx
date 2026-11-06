@@ -1,10 +1,11 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { money, tokenStore } from '../lib/api.ts';
 import { AuthProvider } from '../lib/auth.tsx';
 import { CartProvider, type CartLine } from '../lib/cart.tsx';
-import type { Product, User } from '../types.ts';
+import { markNotificationsRead, notificationKey } from '../lib/notificationsRead.ts';
+import type { Notification, Product, User } from '../types.ts';
 import Nav from './Nav.tsx';
 
 const ada: User = {
@@ -175,6 +176,69 @@ describe('Nav', () => {
       'page',
     );
     expect(screen.getByRole('link', { name: 'Browse' })).not.toHaveAttribute('aria-current');
+  });
+
+  describe('unread email badge', () => {
+    const placed: Notification = {
+      orderId: 'o1',
+      type: 'order.placed',
+      status: 'PLACED',
+      subject: 'We got your booking',
+      sentAt: '2026-10-06T09:01:00Z',
+    };
+    const confirmed: Notification = {
+      ...placed,
+      type: 'order.status-changed',
+      status: 'CONFIRMED',
+      subject: 'Your booking is confirmed',
+      sentAt: '2026-10-06T10:00:00Z',
+    };
+
+    function mockNotifications(list: Notification[]) {
+      return vi
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation(async () => new Response(JSON.stringify(list), { status: 200 }));
+    }
+
+    it('shows the number of unread emails on the bookings link', async () => {
+      mockNotifications([placed, confirmed]);
+      localStorage.setItem('booking.notificationsRead', JSON.stringify([notificationKey(placed)]));
+      signIn(ada);
+      renderNav('/');
+
+      const link = await screen.findByRole('link', { name: 'My bookings 1 unread email' });
+      expect(link).toHaveAttribute('href', '/orders');
+    });
+
+    it('hides the badge when every email has been read', async () => {
+      const fetchMock = mockNotifications([placed]);
+      localStorage.setItem('booking.notificationsRead', JSON.stringify([notificationKey(placed)]));
+      signIn(ada);
+      renderNav('/');
+
+      await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+      expect(screen.getByRole('link', { name: 'My bookings' }).querySelector('.pill')).toBeNull();
+    });
+
+    it('updates when emails are marked as read elsewhere in the app', async () => {
+      mockNotifications([placed, confirmed]);
+      signIn(ada);
+      renderNav('/');
+      await screen.findByRole('link', { name: 'My bookings 2 unread emails' });
+
+      act(() => {
+        markNotificationsRead([placed, confirmed], [placed, confirmed]);
+      });
+
+      expect(screen.getByRole('link', { name: 'My bookings' }).querySelector('.pill')).toBeNull();
+    });
+
+    it('does not ask for emails when nobody is signed in', () => {
+      const fetchMock = mockNotifications([placed]);
+      renderNav('/');
+
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
   });
 
   it('logs out, clears the session and goes home', () => {
