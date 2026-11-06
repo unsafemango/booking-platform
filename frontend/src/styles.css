@@ -356,6 +356,21 @@ main.container {
   font-size: 0.85rem;
   margin-top: -8px;
 }
+.field-hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: -8px;
+}
+.strength-too-short,
+.strength-weak {
+  color: var(--danger);
+}
+.strength-fair {
+  color: var(--warn);
+}
+.strength-strong {
+  color: var(--ok);
+}
 
 /* Toasts */
 .toasts {

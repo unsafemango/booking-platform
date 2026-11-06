@@ -53,6 +53,26 @@ describe('Register page', () => {
     expect(screen.getByRole('link', { name: 'Log in' })).toHaveAttribute('href', '/login');
   });
 
+  it('shows a password strength hint linked to the field', () => {
+    renderRegister();
+    const password = screen.getByLabelText('Password');
+
+    expect(password).toHaveAccessibleDescription('At least 8 characters');
+
+    fireEvent.change(password, { target: { value: 'abc' } });
+    expect(password).toHaveAccessibleDescription('Too short: use at least 8 characters');
+
+    fireEvent.change(password, { target: { value: 'abcdefgh' } });
+    expect(password).toHaveAccessibleDescription('Weak: add length, numbers or symbols');
+
+    fireEvent.change(password, { target: { value: 'Secret123' } });
+    expect(password).toHaveAccessibleDescription('Fair: a longer password or a symbol would help');
+
+    fireEvent.change(password, { target: { value: 'Secret123!' } });
+    expect(password).toHaveAccessibleDescription('Strong password');
+    expect(screen.getByText('Strong password')).toHaveClass('strength-strong');
+  });
+
   it('posts the new account, stores the session and goes home', async () => {
     const fetchMock = mockFetch(201, session);
     renderRegister();
@@ -109,7 +129,9 @@ describe('Register page', () => {
     await waitFor(() => expect(email).toHaveFocus());
     expect(email).toHaveAttribute('aria-invalid', 'true');
     expect(email).toHaveAccessibleDescription('must be a well-formed email address');
-    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription('size must be 8+');
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(
+      'Too short: use at least 8 characters size must be 8+',
+    );
     expect(screen.getByLabelText('Name')).not.toHaveAttribute('aria-invalid');
     // The summary alert is left out when every error has a field to sit next to.
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();

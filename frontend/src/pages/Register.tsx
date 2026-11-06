@@ -7,6 +7,11 @@ import { ApiError } from '../lib/api.ts';
 import { useAuth } from '../lib/auth.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import { useFocusFirstInvalid } from '../lib/useFocusFirstInvalid.ts';
+import {
+  MIN_PASSWORD_LENGTH,
+  passwordStrength,
+  passwordStrengthLabel,
+} from '../lib/passwordStrength.ts';
 
 interface RegisterForm {
   name: string;
@@ -24,6 +29,8 @@ export default function Register() {
   const [busy, setBusy] = useState(false);
   const [formRef, focusFirstInvalid] = useFocusFirstInvalid();
   useDocumentTitle('Create an account');
+
+  const strength = passwordStrength(form.password);
 
   const set = (key: keyof RegisterForm) => (e: ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [key]: e.target.value });
@@ -70,7 +77,16 @@ export default function Register() {
         value={form.password}
         onChange={set('password')}
         error={fields.password}
-        minLength={8}
+        hint={
+          form.password ? (
+            <span className={`strength strength-${strength}`} aria-live="polite">
+              {passwordStrengthLabel(strength)}
+            </span>
+          ) : (
+            `At least ${MIN_PASSWORD_LENGTH} characters`
+          )
+        }
+        minLength={MIN_PASSWORD_LENGTH}
         required
       />
       {error && !Object.keys(fields).length && <Alert>{error}</Alert>}
