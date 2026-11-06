@@ -493,3 +493,56 @@ describe('Orders filters, search and pagination', () => {
     expect(screen.getByTestId('search')).toHaveTextContent('?q=room&status=placed');
   });
 });
+
+describe('Orders inbox read state', () => {
+  const placedEmail: Notification = {
+    orderId: kayakOrder.id,
+    type: 'order.placed',
+    status: 'PLACED',
+    subject: 'We got your booking',
+    sentAt: '2026-10-06T09:01:00Z',
+  };
+
+  beforeEach(() => {
+    socket.handlers.clear();
+    tokenStore.set('jwt-123');
+  });
+
+  function inboxItem(subject: string) {
+    const item = screen.getByText(subject).closest('li');
+    if (!item) throw new Error(`No inbox item for ${subject}`);
+    return item;
+  }
+
+  it('shows new emails as unread and marks one as read', async () => {
+    mockApi([loftOrder, kayakOrder], () => [confirmedEmail, placedEmail]);
+    renderOrders();
+    await screen.findByText('Your booking is confirmed');
+
+    expect(inboxItem('Your booking is confirmed')).toHaveClass('unread');
+    expect(inboxItem('We got your booking')).toHaveClass('unread');
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Mark "Your booking is confirmed" as read' }),
+    );
+    expect(inboxItem('Your booking is confirmed')).not.toHaveClass('unread');
+    expect(inboxItem('We got your booking')).toHaveClass('unread');
+    expect(screen.getByRole('button', { name: 'Mark all as read' })).toBeInTheDocument();
+  });
+
+  it('marks all as read and remembers it after a reload', async () => {
+    mockApi([loftOrder, kayakOrder], () => [confirmedEmail, placedEmail]);
+    const { unmount } = renderOrders();
+    await screen.findByText('Your booking is confirmed');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark all as read' }));
+    expect(screen.queryByRole('button', { name: 'Mark all as read' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Unread:', { exact: false })).not.toBeInTheDocument();
+
+    unmount();
+    renderOrders();
+    await screen.findByText('Your booking is confirmed');
+    expect(inboxItem('Your booking is confirmed')).not.toHaveClass('unread');
+    expect(inboxItem('We got your booking')).not.toHaveClass('unread');
+  });
+});

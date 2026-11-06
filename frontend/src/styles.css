@@ -844,9 +844,27 @@ main.container {
   display: grid;
   gap: 10px;
 }
+.inbox-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 .inbox li {
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--border);
   padding-left: 10px;
+}
+.inbox li.unread {
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+.inbox-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 400;
 }
 
 /* Auth */

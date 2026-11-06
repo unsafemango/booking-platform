@@ -15,6 +15,11 @@ import { money, orderRef } from '../lib/api.ts';
 import { useToast } from '../lib/toast.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import { useFetch } from '../lib/useFetch.ts';
+import {
+  loadReadNotifications,
+  markNotificationsRead,
+  notificationKey,
+} from '../lib/notificationsRead.ts';
 import { useOrderUpdates } from '../lib/useOrderUpdates.ts';
 import type { Notification, Order, OrderStatus } from '../types.ts';
 
@@ -49,6 +54,10 @@ export default function Orders() {
     reload: reloadOrders,
   } = useFetch(listOrders, { keepPrevious: true });
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [readKeys, setReadKeys] = useState(loadReadNotifications);
+  const unread = notifications.filter((n) => !readKeys.includes(notificationKey(n)));
+  const markRead = (read: Notification[]) =>
+    setReadKeys(markNotificationsRead(read, notifications));
   const [flash, setFlash] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -278,17 +287,43 @@ export default function Orders() {
       </section>
 
       <aside className="card inbox">
-        <h2>Emails sent</h2>
+        <div className="inbox-head">
+          <h2>Emails sent</h2>
+          {unread.length > 0 && (
+            <Button variant="ghost" className="btn-small" onClick={() => markRead(notifications)}>
+              Mark all as read
+            </Button>
+          )}
+        </div>
         {notifications.length === 0 && <p className="muted">Nothing yet.</p>}
         <ul>
-          {notifications.map((n, idx) => (
-            <li key={`${n.orderId}-${n.sentAt}-${idx}`}>
-              <div>{n.subject}</div>
-              <div className="muted small">
-                <RelativeTime value={n.sentAt} />
-              </div>
-            </li>
-          ))}
+          {notifications.map((n, idx) => {
+            const isUnread = unread.includes(n);
+            return (
+              <li
+                key={`${n.orderId}-${n.sentAt}-${idx}`}
+                className={isUnread ? 'unread' : undefined}
+              >
+                <div>
+                  {isUnread && <span className="sr-only">Unread: </span>}
+                  <span>{n.subject}</span>
+                </div>
+                <div className="muted small inbox-meta">
+                  <RelativeTime value={n.sentAt} />
+                  {isUnread && (
+                    <Button
+                      variant="ghost"
+                      className="btn-small"
+                      aria-label={`Mark "${n.subject}" as read`}
+                      onClick={() => markRead([n])}
+                    >
+                      Mark read
+                    </Button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </aside>
 
