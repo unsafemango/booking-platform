@@ -74,6 +74,19 @@ describe('Nav', () => {
     expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument();
   });
 
+  it.each([
+    ['/cart', '/login?next=%2Fcart'],
+    ['/?q=loft&sort=price', '/login?next=%2F%3Fq%3Dloft%26sort%3Dprice'],
+    ['/products/p1#details', '/login?next=%2Fproducts%2Fp1%23details'],
+    ['/login', '/login'],
+    ['/login?next=%2Fcart', '/login?next=%2Fcart'],
+    ['/register?next=%2Fcart', '/login?next=%2Fcart'],
+  ])('on %s the log in link goes to %s', (path, href) => {
+    renderNav(path);
+
+    expect(screen.getByRole('link', { name: 'Log in' })).toHaveAttribute('href', href);
+  });
+
   it('shows the number of units in the cart', () => {
     seedCart([
       { product: loft, quantity: 2 },

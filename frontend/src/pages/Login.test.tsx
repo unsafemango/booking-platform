@@ -78,6 +78,15 @@ describe('Login page', () => {
     expect(await screen.findByTestId('location')).toHaveTextContent('/cart');
   });
 
+  it('returns to the filters in an encoded next param', async () => {
+    mockFetch(200, session);
+    renderLogin('/login?next=%2F%3Fq%3Dloft%26sort%3Dprice');
+
+    fillAndSubmit();
+
+    expect(await screen.findByTestId('location')).toHaveTextContent(/^\/\?q=loft&sort=price$/);
+  });
+
   it('goes home instead of following a next param to another site', async () => {
     mockFetch(200, session);
     renderLogin('/login?next=//evil.example');
