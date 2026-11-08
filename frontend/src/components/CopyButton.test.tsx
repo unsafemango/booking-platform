@@ -46,9 +46,10 @@ describe('CopyButton', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Copy reference' }));
 
-    const toasts = await screen.findByRole('list', { name: 'Notifications' });
+    // The toast list is always mounted, so wait for the toast inside it, not for the list.
+    const toasts = screen.getByRole('list', { name: 'Notifications' });
     expect(
-      within(toasts).getByText("Couldn't copy to the clipboard. It's #AAAAAAAA"),
+      await within(toasts).findByText("Couldn't copy to the clipboard. It's #AAAAAAAA"),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Copy reference' })).toBeInTheDocument();
   });
