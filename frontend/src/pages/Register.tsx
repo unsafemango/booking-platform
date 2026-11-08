@@ -1,11 +1,12 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import Input from '../components/Input.tsx';
 import PasswordInput from '../components/PasswordInput.tsx';
 import { ApiError } from '../lib/api.ts';
 import { useAuth } from '../lib/auth.tsx';
+import { safeNext } from '../lib/safeNext.ts';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import { useFocusFirstInvalid } from '../lib/useFocusFirstInvalid.ts';
 import {
@@ -21,8 +22,7 @@ interface RegisterForm {
 }
 
 export default function Register() {
-  const { register } = useAuth();
-  const navigate = useNavigate();
+  const { user, register } = useAuth();
   const [params] = useSearchParams();
   const [form, setForm] = useState<RegisterForm>({ name: '', email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +30,9 @@ export default function Register() {
   const [busy, setBusy] = useState(false);
   const [formRef, focusFirstInvalid] = useFocusFirstInvalid();
   useDocumentTitle('Create an account');
+
+  // Also covers a successful sign-up, and replaces this page so Back doesn't return to the form.
+  if (user) return <Navigate to={safeNext(params.get('next'))} replace />;
 
   const strength = passwordStrength(form.password);
 
@@ -43,7 +46,6 @@ export default function Register() {
     setFields({});
     try {
       await register(form.name, form.email, form.password);
-      navigate(params.get('next') ?? '/');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));
       setFields(err instanceof ApiError ? (err.fields ?? {}) : {});

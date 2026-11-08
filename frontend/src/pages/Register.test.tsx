@@ -44,6 +44,23 @@ function fillAndSubmit({ name = 'Ada', email = 'ada@example.com', password = 'se
 }
 
 describe('Register page', () => {
+  it('redirects a user who is already logged in', () => {
+    localStorage.setItem(USER_KEY, JSON.stringify(ada));
+    tokenStore.set('jwt-123');
+    renderRegister('/register?next=/cart');
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/cart');
+    expect(screen.queryByRole('heading', { name: 'Create an account' })).not.toBeInTheDocument();
+  });
+
+  it('goes home for a logged-in user when next points at another site', () => {
+    localStorage.setItem(USER_KEY, JSON.stringify(ada));
+    tokenStore.set('jwt-123');
+    renderRegister('/register?next=https://evil.example');
+
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/);
+  });
+
   it('sets the page title and focuses the name field', () => {
     renderRegister();
 

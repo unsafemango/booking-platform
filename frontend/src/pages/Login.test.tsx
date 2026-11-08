@@ -78,6 +78,24 @@ describe('Login page', () => {
     expect(await screen.findByTestId('location')).toHaveTextContent('/cart');
   });
 
+  it('goes home instead of following a next param to another site', async () => {
+    mockFetch(200, session);
+    renderLogin('/login?next=//evil.example');
+
+    fillAndSubmit();
+
+    expect(await screen.findByTestId('location')).toHaveTextContent(/^\/$/);
+  });
+
+  it('redirects a user who is already logged in', () => {
+    localStorage.setItem(USER_KEY, JSON.stringify(ada));
+    tokenStore.set('jwt-123');
+    renderLogin('/login?next=/cart');
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/cart');
+    expect(screen.queryByRole('heading', { name: 'Log in' })).not.toBeInTheDocument();
+  });
+
   it('disables the button while the request is in flight', async () => {
     let respond: (res: Response) => void = () => {};
     vi.spyOn(globalThis, 'fetch').mockReturnValue(
