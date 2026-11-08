@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import Input from '../components/Input.tsx';
+import PasswordInput from '../components/PasswordInput.tsx';
 import { useAuth } from '../lib/auth.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 
@@ -41,9 +42,9 @@ export default function Login() {
         required
         autoFocus
       />
-      <Input
+      <PasswordInput
         label="Password"
-        type="password"
+        autoComplete="current-password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required

@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert.tsx';
 import Button from '../components/Button.tsx';
 import Input from '../components/Input.tsx';
+import PasswordInput from '../components/PasswordInput.tsx';
 import { ApiError } from '../lib/api.ts';
 import { useAuth } from '../lib/auth.tsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
@@ -71,9 +72,9 @@ export default function Register() {
         error={fields.email}
         required
       />
-      <Input
+      <PasswordInput
         label="Password"
-        type="password"
+        autoComplete="new-password"
         value={form.password}
         onChange={set('password')}
         error={fields.password}

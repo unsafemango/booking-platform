@@ -5,10 +5,12 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   /** Helper text under the input, linked with aria-describedby. */
   hint?: ReactNode;
+  /** Control shown inside the input's right edge, kept out of the label's accessible name. */
+  action?: ReactNode;
   ref?: Ref<HTMLInputElement>;
 }
 
-export default function Input({ label, error, hint, className, id, ...props }: InputProps) {
+export default function Input({ label, error, hint, action, className, id, ...props }: InputProps) {
   const generatedId = useId();
   const inputId = id ?? generatedId;
   const errorId = `${inputId}-error`;
@@ -23,16 +25,24 @@ export default function Input({ label, error, hint, className, id, ...props }: I
       {...props}
     />
   );
+  const field = label ? (
+    <label>
+      {label}
+      {input}
+    </label>
+  ) : (
+    input
+  );
 
   return (
     <>
-      {label ? (
-        <label>
-          {label}
-          {input}
-        </label>
+      {action ? (
+        <div className="input-with-action">
+          {field}
+          {action}
+        </div>
       ) : (
-        input
+        field
       )}
       {hint && (
         <span id={hintId} className="field-hint">
