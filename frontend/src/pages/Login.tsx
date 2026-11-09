@@ -5,7 +5,7 @@ import Button from '../components/Button.tsx';
 import Input from '../components/Input.tsx';
 import PasswordInput from '../components/PasswordInput.tsx';
 import { useAuth } from '../lib/auth.tsx';
-import { safeNext } from '../lib/safeNext.ts';
+import { safeNext, withNext } from '../lib/safeNext.ts';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 
 export default function Login() {
@@ -56,10 +56,7 @@ export default function Login() {
         {busy ? 'Logging in…' : 'Log in'}
       </Button>
       <p className="muted">
-        No account?{' '}
-        <Link to={`/register${params.get('next') ? `?next=${params.get('next')}` : ''}`}>
-          Sign up
-        </Link>
+        No account? <Link to={withNext('/register', params.get('next'))}>Sign up</Link>
       </p>
     </form>
   );

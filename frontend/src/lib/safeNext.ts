@@ -13,3 +13,8 @@ export function safeNext(next: string | null): string {
     return '/';
   }
 }
+
+/** Adds a `next` param to a path, encoded so a query string inside it stays in one piece. */
+export function withNext(path: string, next: string | null): string {
+  return next ? `${path}?next=${encodeURIComponent(next)}` : path;
+}

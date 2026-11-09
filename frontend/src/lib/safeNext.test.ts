@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { safeNext } from './safeNext.ts';
+import { safeNext, withNext } from './safeNext.ts';
 
 describe('safeNext', () => {
   it('keeps paths on this site, with their query and hash', () => {
@@ -22,5 +22,18 @@ describe('safeNext', () => {
     'cart',
   ])('rejects %j', (next) => {
     expect(safeNext(next)).toBe('/');
+  });
+});
+
+describe('withNext', () => {
+  it('encodes next so its query string survives', () => {
+    expect(withNext('/login', '/?q=loft&sort=price#top')).toBe(
+      '/login?next=%2F%3Fq%3Dloft%26sort%3Dprice%23top',
+    );
+  });
+
+  it('leaves the path alone when there is no next', () => {
+    expect(withNext('/login', null)).toBe('/login');
+    expect(withNext('/login', '')).toBe('/login');
   });
 });

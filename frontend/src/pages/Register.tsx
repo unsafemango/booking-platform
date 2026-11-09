@@ -6,7 +6,7 @@ import Input from '../components/Input.tsx';
 import PasswordInput from '../components/PasswordInput.tsx';
 import { ApiError } from '../lib/api.ts';
 import { useAuth } from '../lib/auth.tsx';
-import { safeNext } from '../lib/safeNext.ts';
+import { safeNext, withNext } from '../lib/safeNext.ts';
 import { useDocumentTitle } from '../lib/useDocumentTitle.ts';
 import { useFocusFirstInvalid } from '../lib/useFocusFirstInvalid.ts';
 import {
@@ -97,7 +97,7 @@ export default function Register() {
         {busy ? 'Creating…' : 'Sign up'}
       </Button>
       <p className="muted">
-        Already registered? <Link to="/login">Log in</Link>
+        Already registered? <Link to={withNext('/login', params.get('next'))}>Log in</Link>
       </p>
     </form>
   );

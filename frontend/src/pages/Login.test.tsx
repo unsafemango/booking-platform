@@ -152,7 +152,16 @@ describe('Login page', () => {
 
     expect(screen.getByRole('link', { name: 'Sign up' })).toHaveAttribute(
       'href',
-      '/register?next=/cart',
+      '/register?next=%2Fcart',
+    );
+  });
+
+  it('keeps the whole of a next param with a query string in the sign up link', () => {
+    renderLogin('/login?next=%2F%3Fq%3Dloft%26sort%3Dprice');
+
+    expect(screen.getByRole('link', { name: 'Sign up' })).toHaveAttribute(
+      'href',
+      '/register?next=%2F%3Fq%3Dloft%26sort%3Dprice',
     );
   });
 

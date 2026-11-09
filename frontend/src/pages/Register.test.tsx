@@ -117,6 +117,15 @@ describe('Register page', () => {
     expect(await screen.findByTestId('location')).toHaveTextContent('/cart');
   });
 
+  it('links to log in, keeping an encoded next param', () => {
+    renderRegister('/register?next=%2F%3Fq%3Dloft%26sort%3Dprice');
+
+    expect(screen.getByRole('link', { name: 'Log in' })).toHaveAttribute(
+      'href',
+      '/login?next=%2F%3Fq%3Dloft%26sort%3Dprice',
+    );
+  });
+
   it('disables the button while the request is in flight', async () => {
     let respond: (res: Response) => void = () => {};
     vi.spyOn(globalThis, 'fetch').mockReturnValue(
